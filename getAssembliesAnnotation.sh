@@ -218,24 +218,25 @@ cat ${output_dir}diffexFileHeader.txt ${output_dir}diffexFile.txt >${output_dir}
 ##### blast of tags against adapters, and retain only those not matching
 ########################################################################
 
-#if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then 
+if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then 
 
-echo -e "\n==== Filter out assemblies matching in adapters ====\n"
+	echo -e "\n==== Filter out assemblies matching in adapters ====\n"
 
-echo -e "  blast on adapters !\n"
+	echo -e "  blast on adapters !\n"
 
-bash $blast -q ${output_dir}OriginalFastaTags.fa -s $illumina_adapters -o $output_dir -p $ncbi_blast_loc -d "illumina_adapters" -n $threads || { echo "blast on adapters failure!!" 1>&2; exit; }
+	bash $blast -q ${output_dir}OriginalFastaTags.fa -s $illumina_adapters -o $output_dir -p $ncbi_blast_loc -d "illumina_adapters" -n $threads || { echo "blast on adapters failure!!" 1>&2; exit; }
 
-#for checkings
-awk '!seen[$1]++' "${output_dir}raw_blast.alignment_2.txt"| sed $'s/ /\t/g' >${output_dir}match_in_adapters.txt
+	#for checkings
+	awk '!seen[$1]++' "${output_dir}raw_blast.alignment_2.txt"| sed $'s/ /\t/g' >${output_dir}match_in_adapters.txt
 
-grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g'| sort >${output_dir}originaltagIDs.txt
+	grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g'| sort >${output_dir}originaltagIDs.txt
 
-comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -u)|awk 'OFS="\t"{print ">"$1}'|LANG=en_EN sort -k1,1 >${output_dir}nomatch_in_adapters.txt && rm ${output_dir}originaltagIDs.txt
+	comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -u)|awk 'OFS="\t"{print ">"$1}'|LANG=en_EN sort -k1,1 >${output_dir}nomatch_in_adapters.txt && rm ${output_dir}originaltagIDs.txt
 
-#reconstruction of the fasta with only tags not matching in adapters
-LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp|sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
+	#reconstruction of the fasta with only tags not matching in adapters
+	LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp|sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
 
+fi
 
 ##### mapping of the assemblies
 ###############################
@@ -244,35 +245,35 @@ LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_d
 if [ ! -f ${mapping_output}assemblies.bam ];then
 
 
-                  echo -e "\n==== Mapping of assemblies on the genome ====\n"
-                  
-                  echo -e "number of assemblies to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
-                  
-                  start_date=$(date)
-                  
-                  #if no GSNAP index, build it 
-                  if [ "$gsnap_index_name" == "" ] || [ "$gsnap_index_dir" == "" ];then
-                  
-                       echo -e "  no GASNAP index for the genome, we're going to make it !"
-                  
-                       gsnap_index_name="genome_index"
-                       
-                       gsnap_index_dir=$mapping_output 
-                       
-                       ${GSNAP_loc}gmap_build -D $mapping_output -d $gsnap_index_name $ref_fasta  || { echo "gsnap db building failure!!" 1>&2; exit; }
-                       
-                       
-                  fi
-                  
-                  gsnap_index_dir="${gsnap_index_dir}/"
-                  gsnap_index_dir=$(echo "$gsnap_index_dir" |sed 's/\/\//\//g')
-  
-		  ${GSNAP_loc}gsnap -t $threads --merge-distant-samechr -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name ${output_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}assemblies.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
-		  end_date=$(date)
-		  
-		  echo -e "\nstart mapping of assemblies : $start_date\n"
-                  echo -e "\nend blast of mapping of assemblies : $end_date\n"
-		  
+          echo -e "\n==== Mapping of assemblies on the genome ====\n"
+          
+          echo -e "number of assemblies to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
+          
+          start_date=$(date)
+          
+          #if no GSNAP index, build it 
+          if [ "$gsnap_index_name" == "" ] || [ "$gsnap_index_dir" == "" ];then
+          
+               echo -e "  no GASNAP index for the genome, we're going to make it !"
+          
+               gsnap_index_name="genome_index"
+               
+               gsnap_index_dir=$mapping_output 
+               
+               ${GSNAP_loc}gmap_build -D $mapping_output -d $gsnap_index_name $ref_fasta  || { echo "gsnap db building failure!!" 1>&2; exit; }
+               
+               
+          fi
+          
+          gsnap_index_dir="${gsnap_index_dir}/"
+          gsnap_index_dir=$(echo "$gsnap_index_dir" |sed 's/\/\//\//g')
+
+	  ${GSNAP_loc}gsnap -t $threads --merge-distant-samechr -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name ${output_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}assemblies.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
+	  end_date=$(date)
+	  
+	  echo -e "\nstart mapping of assemblies : $start_date\n"
+          echo -e "\nend blast of mapping of assemblies : $end_date\n"
+	  
 		  
 		  
 		  
