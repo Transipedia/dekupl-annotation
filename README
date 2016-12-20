@@ -24,7 +24,7 @@ Usage: ./getAssembliesAnnotation.sh -a <assemblies from DEkupl> -g <genome in fa
 
                   -m <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
-                  -p < padj diff. gene threshold (default : 0.05)>
+                  -p <padj diff. gene threshold (default : 0.05)>
 
                   -s <path to samtools (default : in $PATH environment variable)>
 
@@ -38,6 +38,7 @@ Usage: ./getAssembliesAnnotation.sh -a <assemblies from DEkupl> -g <genome in fa
 
                   
                   - Table "AssembliesPerLoci.txt" containing loci with differentially expressed assemblies
+
                   
                   
 ========================================================                  
@@ -80,9 +81,13 @@ Miscellaneous :
 
   
 
-  	- If the file "nomatch_in_adapters.fa" containing unmapped assemblies on the adapters is created, this step (that run Blaston adapters) is avoided. If you want to re-run it anyway, put in comment the if-statement.
+  	- If the file "nomatch_in_adapters.fa" containing unmapped assemblies on the adapters is created, the step of blast on adapters will be avoided. If you want to re-run it anyway, put in comment the if-statement.
   
-  	- If the alignemnt file of assemblies is already created, this step is avoided. If you want to re-run it anyway, put in comment the if-statement.
+  	- If the alignemnt file of assemblies is already created, this step will be avoided. If you want to re-run it anyway, put in comment the if-statement.
+  	
+  	- If Blast data bases for the human genome and the adapters is already created, this step in the script blast.sh will be avoided.
+  	
+  	- The Blast of unmapped assemblies on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many, and run blast on each sub-file (with xargs) to speed up.
   
 
  	

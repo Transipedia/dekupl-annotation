@@ -32,8 +32,6 @@ parseModifiedBed(){
 	   #echo -e "line in SAM is : $LineInSam"
 
 	   ID=$(echo "$line"|cut -f 4)
-	   
-	   #if [ "$ID" != "GGCCCGGGTGGACGTGGCCGTCCTGGCTGAC" ];then continue ;fi
 
 	   #echo -e "ID is : $ID"
 
