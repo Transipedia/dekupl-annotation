@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#remark : use the bed file instead of the gff3 file for the annotation
+
+#add as features : is_mapped, aligner, intronic, other-split (like chimeric alignment flag 0x800)
 
  usage() { echo -e "Usage: $0 -a <assemblies from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <output_dir> -i <path to illumina adapters> [options]\n\n\tOptions :\n
                   -b <path to bin/ of blast scripts (default : in \$PATH environment variable)>\n
@@ -215,7 +218,7 @@ cat ${output_dir}diffexFileHeader.txt ${output_dir}diffexFile.txt >${output_dir}
 ##### blast of tags against adapters, and retain only those not matching
 ########################################################################
 
-if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then 
+#if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then 
 
 echo -e "\n==== Filter out assemblies matching in adapters ====\n"
 
@@ -231,9 +234,7 @@ grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g'| sort >${output_dir}o
 comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -u)|awk 'OFS="\t"{print ">"$1}'|LANG=en_EN sort -k1,1 >${output_dir}nomatch_in_adapters.txt && rm ${output_dir}originaltagIDs.txt
 
 #reconstruction of the fasta with only tags not matching in adapters
-LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp|sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.txt ${output_dir}nomatch_in_adapters.fa
-
-fi
+LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp|sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
 
 
 ##### mapping of the assemblies
