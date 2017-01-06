@@ -347,7 +347,7 @@ start_date=$(date)
 	if [ -f ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 ];then
 
 	  #put the result in the bed file 
-	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,1,$7-$6}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_assemblies_bed
+	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_assemblies_bed
 
           #assemblies still unmapped after the previous method
 	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedTags.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedTags.txt) >${output_dir}unmapped_tags_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
