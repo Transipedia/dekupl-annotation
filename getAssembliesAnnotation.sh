@@ -4,7 +4,7 @@
 
 #add as features : is_mapped, aligner, intronic, other-split (like chimeric alignment flag 0x800)
 
- usage() { echo -e "Usage: $0 -a <assemblies from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <output_dir> -i <path to illumina adapters> [options]\n\n\tOptions :\n
+ usage() { echo -e "Usage: $0 -a <contigs from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <output_dir> -i <path to illumina adapters> [options]\n\n\tOptions :\n
                   -b <path to bin/ of blast scripts (default : in \$PATH environment variable)>\n
                   -c <path to bedtools, preferentially 2.24 (default : in \$PATH environment variable)>\n
                   -j <GSNAP index name>\n
@@ -13,10 +13,10 @@
                   -p <padj diff. gene threshold (default : 0.05)>\n
                   -s <path to samtools (default : in \$PATH environment variable)>\n
                   -n <thread number (default : 1)>\n\n\tResults :\n
-                  - Table \"DiffAssembliesInfos.txt\", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\n
-                  - BED \"file diff_assemblies.bed\" for the visualization ; it contains useful informations from the summarization table.\n
+                  - Table \"DiffContigsInfos.tsv\", summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\n
+                  - BED \"file diff_contigs.bed\" for the visualization ; it contains useful informations from the summarization table.\n
                   
-                  - Table \"AssembliesPerLoci.txt\" containing loci with differentially expressed assemblies\n" 1>&2; exit 1;}
+                  - Table \"contigsPerLoci.txt\" containing loci with differentially expressed contigs\n" 1>&2; exit 1;}
 
 [[ $# -eq 0 ]] && usage
 
@@ -27,7 +27,7 @@ while getopts ":a:g:d:r:i:o:b:c:j:k:m:p:s:n:" opt; do
       
 	      DEkupl_result=$OPTARG
 	      
-	      echo -e "\nassemblies file from DEkupl is : $DEkupl_result\n" >&2
+	      echo -e "\ncontigs file from DEkupl is : $DEkupl_result\n" >&2
 	      
               ;;
       
@@ -193,11 +193,11 @@ mapping_output="${output_dir}mapping_output/"
 if [ ! -d $mapping_output ];then mkdir $mapping_output ;fi
 
 #final tab file
-FinalTable="${output_dir}DiffAssembliesInfos.txt"
+FinalTable="${output_dir}DiffContigsInfos.tsv"
 if [ -f $FinalTable ];then rm $FinalTable ;fi
 
-diff_assemblies_bed="${output_dir}diff_assemblies.bed"
-if [ -f $diff_assemblies_bed ];then rm $diff_assemblies_bed ;fi
+diff_contigs_bed="${output_dir}diff_contigs.bed"
+if [ -f $diff_contigs_bed ];then rm $diff_contigs_bed ;fi
 
 #processing of the gff
 grep -v "^#" $ref_annotation|sort -k1,1 -k4,4n >${output_dir}ref_annotation.tmp
@@ -206,10 +206,10 @@ ref_annotation=${output_dir}ref_annotation.tmp
 
 awk 'NR==1{OFS="\t";print "ID",$0;exit}' $DEkupl_result >${output_dir}diffexFileHeader.txt
 
-#convert the DEkupl assemblies output in fasta, and at the same time put the tag of reference as an ID for joinings
+#convert the DEkupl contigs output in fasta, and at the same time put the tag of reference as an ID for joinings
 awk 'NR>1{print}' $DEkupl_result|awk 'OFS="\t"{print $3,$0}'|tee ${output_dir}diffexFile.txt |awk 'OFS="\n"{print ">"$1,$3}' >${output_dir}OriginalFastaTags.fa 
 
-#col 1 =ID ; col 2 = assembly seq : will be used in joinings
+#col 1 =ID ; col 2 = contig seq : will be used in joinings
 cat ${output_dir}OriginalFastaTags.fa |paste - - |awk 'OFS="\t"{print $1,$2}'|LANG=en_EN sort -k1,1 >${output_dir}OriginalFastaTags.tmp
 
 
@@ -220,7 +220,7 @@ cat ${output_dir}diffexFileHeader.txt ${output_dir}diffexFile.txt >${output_dir}
 
 if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then 
 
-	echo -e "\n==== Filter out assemblies matching in adapters ====\n"
+	echo -e "\n==== Filter out contigs matching in adapters ====\n"
 
 	echo -e "  blast on adapters !\n"
 
@@ -235,19 +235,20 @@ if [ ! -f ${output_dir}nomatch_in_adapters.fa ];then
 
 	#reconstruction of the fasta with only tags not matching in adapters
 	LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp|sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
+	
 
 fi
 
-##### mapping of the assemblies
+##### mapping of the contigs
 ###############################
  
-#if no alignment file in BAM format for the assemblies, build it 
-if [ ! -f ${mapping_output}assemblies.bam ];then
+#if no alignment file in BAM format for the contigs, build it 
+if [ ! -f ${mapping_output}contigs.bam ];then
 
 
-          echo -e "\n==== Mapping of assemblies on the genome ====\n"
+          echo -e "\n==== Mapping of contigs on the genome ====\n"
           
-          echo -e "number of assemblies to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
+          echo -e "number of contigs to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
           
           start_date=$(date)
           
@@ -268,11 +269,11 @@ if [ ! -f ${mapping_output}assemblies.bam ];then
           gsnap_index_dir="${gsnap_index_dir}/"
           gsnap_index_dir=$(echo "$gsnap_index_dir" |sed 's/\/\//\//g')
 
-	  ${GSNAP_loc}gsnap -t $threads --merge-distant-samechr -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name ${output_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}assemblies.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
+	  ${GSNAP_loc}gsnap -t $threads -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name ${output_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}contigs.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
 	  end_date=$(date)
 	  
-	  echo -e "\nstart mapping of assemblies : $start_date\n"
-          echo -e "\nend blast of mapping of assemblies : $end_date\n"
+	  echo -e "\nstart mapping of contigs : $start_date\n"
+          echo -e "\nend blast of mapping of contigs : $end_date\n"
 	  
 		  
 		  
@@ -289,10 +290,10 @@ echo -e "\n==== Reconstruction of the tag structure (splices, exons...) from the
 
 start_date=$(date)
 
-#from the alignment, get a bed and a table of the assemblies with infos about the alignment
-parseBam ${mapping_output}assemblies.bam $FinalTable $diff_assemblies_bed
+#from the alignment, get a bed and a table of the contigs with infos about the alignment
+parseBam ${mapping_output}contigs.bam $FinalTable $diff_contigs_bed
 
-$samtools view -f 4 ${mapping_output}assemblies.bam |awk -v start_line=$(($(wc -l $diff_assemblies_bed|awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedTags.txt
+$samtools view -f 4 ${mapping_output}contigs.bam|sort -k1,1|sort -u -k1,1|awk -v start_line=$(($(wc -l $diff_contigs_bed|awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedTags.txt
 
 end_date=$(date)
 
@@ -307,12 +308,12 @@ if [ -f ${output_dir}OriginalUnmappedTags.txt ];then
 start_date=$(date)
 
 
- #if there are unmapped assemblies, we'll try to align them with blast (actually we are looking for those with full length)
+ #if there are unmapped contigs, we'll try to align them with blast (actually we are looking for those with full length)
  if [[ $(wc -l ${output_dir}OriginalUnmappedTags.txt|awk '{print $1}') -gt 0 ]];then
 
-	echo -e "\n==== blast of unmapped assemblies : retrieving those mapping with their full length ====\n"
+	echo -e "\n==== blast of unmapped contigs : retrieving those mapping with their full length ====\n"
 
-        #this function will rebuild a fasta file from the unmapped assemblies
+        #this function will rebuild a fasta file from the unmapped contigs
 	getFastaFromUnmappedTags ${output_dir}OriginalUnmappedTags.txt ${output_dir}OriginalFastaTags.tmp ${output_dir}unmapped_fasta1.fa 
 
 	bash $blast -q ${output_dir}unmapped_fasta1.fa -s $ref_fasta -o $output_dir -p $ncbi_blast_loc -d "human_genome" -n $threads
@@ -342,19 +343,19 @@ start_date=$(date)
 
 	done < ${output_dir}UnmappedEntirelyFoundByBlast.txt
 	
-	rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp1 && ${output_dir}UnmappedEntirelyFoundByBlast.txt
+	rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp1 ${output_dir}UnmappedEntirelyFoundByBlast.txt
 
 	if [ -f ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 ];then
 
 	  #put the result in the bed file 
-	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_assemblies_bed
+	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
 
-          #assemblies still unmapped after the previous method
+          #contigs still unmapped after the previous method
 	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedTags.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedTags.txt) >${output_dir}unmapped_tags_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
 	
 	else
 
-          #if the previous method doesn't give results, just re-use the initial unmapped assemblies
+          #if the previous method doesn't give results, just re-use the initial unmapped contigs
           cat ${output_dir}OriginalUnmappedTags.txt >${output_dir}unmapped_tags_2.txt
 
         fi
@@ -364,21 +365,20 @@ start_date=$(date)
 
 end_date=$(date)
 
-echo -e "\nstart blast of unmapped assemblies : $start_date\n"
-echo -e "\nend blast of unmapped assemblies : $end_date\n"
+echo -e "\nstart blast of unmapped contigs : $start_date\n"
+echo -e "\nend blast of unmapped contigs : $end_date\n"
 
 fi
 
-sort -k1,1 -k2,2n $diff_assemblies_bed >${diff_assemblies_bed}.tmp && mv ${diff_assemblies_bed}.tmp $diff_assemblies_bed
-
+sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 ########## insert diffex infos in the bed file 
 ###############################################
 
+LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed|awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}'|sed 's/^ID=//g'|awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{printf $1"\t";printf "%.3e\t",$5;printf "%.0f\t",$6;printf "%.0f\t",$7;printf "%.2f\n",$8}' ${output_dir}diffexFile.txt|LANG=en_EN sort -k1,1)|awk 'OFS="\t"{$5=$5";pval="$14";meanA="$15";meanB="$16";log2FC="$17;print}'|cut -f2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
 
-LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_assemblies_bed|awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}'|sed 's/^ID=//g'|awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{printf $1"\t";printf "%.3e\t",$5;printf "%.0f\t",$6;printf "%.0f\t",$7;printf "%.2f\n",$8}' ${output_dir}diffexFile.txt|LANG=en_EN sort -k1,1)|awk 'OFS="\t"{$5=$5";pval="$14";meanA="$15";meanB="$16";log2FC="$17;print}'|cut -f2-13 >${diff_assemblies_bed}.tmp1 && mv ${diff_assemblies_bed}.tmp1 ${diff_assemblies_bed}
 
-sort -k1,1 -k2,2n $diff_assemblies_bed >${diff_assemblies_bed}.tmp && mv ${diff_assemblies_bed}.tmp $diff_assemblies_bed
+sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
 ########## search max and min abs(log2FC) to scale the bed color (RGB) on them
@@ -409,23 +409,23 @@ min_abs_log2FC=$(echo -e "${min_up_log2FC}\n${min_down_log2FC}" |sort -n |head -
 
 #join bed and diffex table (just column lineInSam and log2FC) by lineInSAM
 
-LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_assemblies_bed|awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}'|sed 's/^ID=//g'|awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{OFS="\t";print $1,$8}' ${output_dir}diffexFile.txt)|awk -v b=220 -v a=0 -v max=$max_abs_log2FC -v min=$min_abs_log2FC 'OFS="\t"{if($NF~/-/){abs_log2FC=-$14}else{abs_log2FC=$NF};RGB=220-((((b-a)*((0.5^(abs_log2FC))-(0.5^(min))))/((0.5^(max))-(0.5^(min))))+a);if($7=="+"){printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB};if($7=="-"){printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}}'|awk 'OFS="\t"{$10=$NF;print}'|cut -f 2-13 >${diff_assemblies_bed}.tmp1 && mv ${diff_assemblies_bed}.tmp1 ${diff_assemblies_bed}
+LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed|awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}'|sed 's/^ID=//g'|awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{OFS="\t";print $1,$8}' ${output_dir}diffexFile.txt)|awk -v b=220 -v a=0 -v max=$max_abs_log2FC -v min=$min_abs_log2FC 'OFS="\t"{if($NF~/-/){abs_log2FC=-$14}else{abs_log2FC=$NF};RGB=220-((((b-a)*((0.5^(abs_log2FC))-(0.5^(min))))/((0.5^(max))-(0.5^(min))))+a);if($7=="+"){printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB};if($7=="-"){printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}}'|awk 'OFS="\t"{$10=$NF;print}'|cut -f 2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
 
-sort -k1,1 -k2,2n $diff_assemblies_bed >${diff_assemblies_bed}.tmp && mv ${diff_assemblies_bed}.tmp $diff_assemblies_bed
+sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
 ########## research of antisense & neighbours + location of the tags in the gene (UTR, exon...) ###########
 ###########################################################################################################
 
-echo -e "\n==== research of the neighborhood of the assemblies ====\n"
+echo -e "\n==== research of the neighborhood of the contigs ====\n"
 
 #genome size for bedtools 
-$samtools view -H ${mapping_output}assemblies.bam|grep -E -v "^@PG|^@HD"|awk 'OFS="\t"{print $2,$3}'|sed 's/SN\://;s/LN\://g'|sort -k1,1 >${mapping_output}genome_size.txt
+$samtools view -H ${mapping_output}contigs.bam|grep -E -v "^@PG|^@HD"|awk 'OFS="\t"{print $2,$3}'|sed 's/SN\://;s/LN\://g'|sort -k1,1 >${mapping_output}genome_size.txt
 
 start_date=$(date)
 
 #searching antisense tags, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_assemblies_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}antisense_tags.txt
+awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}antisense_tags.txt
 
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt|awk -F';' 'OFS="\t"{print $1,$5}' |awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
@@ -434,7 +434,7 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #searching sense tags (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_assemblies_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}sense_tags.txt
+awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}sense_tags.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$5}' |awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
 
@@ -442,7 +442,7 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #closest 5'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-awk '{if($3=="gene"){print}}' $ref_annotation|$bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt -s -io -fu -D a -t first -a $diff_assemblies_bed -b - | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}closest_5end.txt
+awk '{if($3=="gene"){print}}' $ref_annotation|$bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt -s -io -fu -D a -t first -a $diff_contigs_bed -b - | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}closest_5end.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_5end.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_5end.txt|awk -F';' '{print $1}' |awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_5end.txt |awk '{if($1=="."){$2="none"};print $2}')|awk 'OFS="\t"{if($3>0){$2="none";$3="none"}print}'>${output_dir}closest_5end.tmp && mv ${output_dir}closest_5end.tmp ${output_dir}closest_5end.txt
 
@@ -450,14 +450,14 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #closest 3'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-awk '{if($3=="gene"){print}}' $ref_annotation|$bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt -s -io -fd -D a -t first -a $diff_assemblies_bed -b - | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}closest_3end.txt
+awk '{if($3=="gene"){print}}' $ref_annotation|$bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt -s -io -fd -D a -t first -a $diff_contigs_bed -b - | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}closest_3end.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_3end.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_3end.txt|awk -F';' '{print $1}' |awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_3end.txt |awk '{if($1=="."){$2="none"};print $2}')|awk 'OFS="\t"{if($3<0){$2="none";$3="none"}print}'>${output_dir}closest_3end.tmp && mv ${output_dir}closest_3end.tmp ${output_dir}closest_3end.txt
 
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}closest_3end.txt
 
 #searching UTR tags (gives 1 col in addition of the lineInSAM : T or F)
-awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_assemblies_bed -b - -loj -nonamecheck| sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}UTR_tags.txt
+awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_contigs_bed -b - -loj -nonamecheck| sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}UTR_tags.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_tags.txt|awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_tags.tmp && mv ${output_dir}UTR_tags.tmp ${output_dir}UTR_tags.txt
 
@@ -465,14 +465,14 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #searching exonic tags ( gives 1 col in addition of the line_in_SAM : T or F)
-awk '{if($3=="exon"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_assemblies_bed -b - -loj -nonamecheck| sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}Exonic_tags.txt
+awk '{if($3=="exon"){print}}' $ref_annotation| $bedtools intersect -s -a $diff_contigs_bed -b - -loj -nonamecheck| sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}Exonic_tags.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_tags.txt|awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_tags.tmp && mv ${output_dir}Exonic_tags.tmp ${output_dir}Exonic_tags.txt
 
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}Exonic_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
 #searching intronic tags (it gives 1 col in addition of the line_in_SAM : T or F)
-#join genic assemblies, exonic assemblies, and UTR assemblies by line_in_SAM ; so we have 4 columns
+#join genic contigs, exonic contigs, and UTR contigs by line_in_SAM ; so we have 4 columns
 #if the tag isn't genic, it cannot be intronic (intronic=F). In the case it is genic : if it's exonic or UTR, it cannot be intronic either(intronic=F). If it's not in the previous groups, it's intronic (intronic=T)
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${output_dir}sense_tags.txt) <(LANG=en_EN sort -k1,1 ${output_dir}Exonic_tags.txt) |LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}UTR_tags.txt) | awk 'OFS="\t"{if($2=="none"){print $1,"F"}else{if($3=="T" || $4=="T"){print $1,"F"}else{print $1,"T"}}}'>${output_dir}Intronic_tags.txt
 
@@ -484,7 +484,7 @@ awk -v padj_threshold=$padj_threshold 'NR>1{if($7!="NA" && $7<=padj_threshold){p
 # ! sensitive column ! : in final table we have to search sense gene (actually it's col 22); this give cols lineInSam & sense gene
 awk 'NR>1{OFS="\t";if($22!="none"){print $1,$22}}' $FinalTable >${output_dir}genes_with_tags.txt
 
-#join genes with assemblies and diff_genes_ID by gene ID, and keep the lineInSam as first col ; this give cols lineInSam & gene_is_diff
+#join genes with contigs and diff_genes_ID by gene ID, and keep the lineInSam as first col ; this give cols lineInSam & gene_is_diff
 LANG=en_EN join -t $'\t' -a1 -e'F' -12 -21 -o 1.1,2.1 <(LANG=en_EN sort -k2,2 ${output_dir}genes_with_tags.txt) <(LANG=en_EN sort -k2,2 ${output_dir}diff_genes_ID.txt) |awk 'OFS="\t"{if($2!="F"){$2="T"};print}' >${output_dir}diff_genes_with_tags.txt && rm ${output_dir}genes_with_tags.txt ${output_dir}diff_genes_ID.txt
 
 #join the final table with diff_genes_ID
@@ -493,14 +493,14 @@ LANG=en_EN join -t $'\t' -a1 -e'F' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) 
 
 end_date=$(date)
 
-echo -e "\nstart searching of assemblies environment  : $start_date\n"
-echo -e "\nend searching of assemblies environment : $end_date\n"
+echo -e "\nstart searching of contigs environment  : $start_date\n"
+echo -e "\nend searching of contigs environment : $end_date\n"
 
-
-#add the appropriates NAs (in addition of the existing lineInSam and tag ID column) in the final table for the unmatched assemblies
+#add the appropriates NAs (in addition of the existing lineInSam and tag ID column) in the final table for the unmatched contigs
 #2 (LineInSam + ID) +29 NAs = 31 columns
 
 if [ -f ${output_dir}unmapped_tags_2.txt ];then
+
 
 	if [[ $(wc -l ${output_dir}unmapped_tags_2.txt |awk '{print $1}') -gt 0 ]];then
 
@@ -539,16 +539,15 @@ cat ${output_dir}header.txt $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.t
 
 #remove the additional "tag" column
 cut -f 1-33,35- $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
-
-echo -e "\n==== Clustering of the assemblies by loci (genic/antisense/intergenic) ====\n"
+sed 's/assembly/contig/g' $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
+echo -e "\n==== Clustering of the contigs by loci (genic/antisense/intergenic) ====\n"
 
 #it works !
 start_date=$(date)	
-$getAssembliesPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
+$getContigsPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
 end_date=$(date)
 
-echo -e "\nstart clustering of assemblies : $start_date\n"
-echo -e "\nend clustering of assemblies : $end_date\n"
+echo -e "\nstart clustering of contigs : $start_date\n"
+echo -e "\nend clustering of contigs : $end_date\n"
 
 rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaTags.tmp
-
