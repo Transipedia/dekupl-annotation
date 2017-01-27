@@ -14,21 +14,21 @@ Usage: ./getContigsAnnotation.sh -a <contigs from DEkupl> -g <genome in fasta> -
 
 	Options :
 
-                  -b path to bin/ of blast scripts (default : in $PATH environment variable)
+                  -b    <path to bin/ of blast scripts (default : in $PATH environment variable)>
 
-                  -c path to bedtools, preferentially 2.24 (default : in $PATH environment variable)
+                  -c     <path to bedtools, preferentially 2.24 (default : in $PATH environment variable)>
 
-                  -j GSNAP index name
+                  -j    <GSNAP index name>
 
-                  -k path to directory of GSNAP index
+                  -k    <path to directory of GSNAP index>
 
-                  -m path to bin/ of GSNAP (default : in $PATH environment variable)
+                  -m    <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
-                  -p padj diff. gene threshold (default : 0.05)>
+                  -p    <padj diff. gene threshold (default : 0.05)>
 
-                  -s path to samtools (default : in $PATH environment variable)
+                  -s    <path to samtools (default : in $PATH environment variable)>
 
-                  -n thread number (default : 1)
+                  -n    <thread number (default : 1)>
 
 	Results :
 
