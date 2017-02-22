@@ -12,7 +12,7 @@ Required dependencies :
 ========================================================
 
 
-Usage: ./getContigsAnnotation.sh -a <contigs from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <output_dir> -i <path to illumina adapters> [options]
+Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < output_dir > -i < path to illumina adapters > [options]
 
 	Options :
 
