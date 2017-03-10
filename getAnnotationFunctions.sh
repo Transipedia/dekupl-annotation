@@ -245,17 +245,17 @@ parseModifiedBed(){
 
 parseBam(){
       
-        bam_file=$1
-        output_table=${2}
+    bam_file=$1
+    output_table=${2}
         output_bed=${3}
      
-        if [ -f $output_table ];then rm $output_table ; fi
-        if [ -f $output_bed ];then rm $output_bed ; fi
+    if [ -f $output_table ];then rm $output_table ; fi
+    if [ -f $output_bed ];then rm $output_bed ; fi
         
-        samtools view -H $bam_file >${output_dir}sam_header.txt
+    $samtools view -H $bam_file >${output_dir}sam_header.txt
         
-        #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
-	samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|cat ${output_dir}sam_header.txt - |samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${output_dir}primary_aligment.txt
+    #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
+	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|cat ${output_dir}sam_header.txt - |samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${output_dir}primary_aligment.txt
 	
 	#remove /1 or /2 that could be added by betools for read1 or read2
 	awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' ${output_dir}primary_aligment.txt >${output_dir}primary_aligment.tmp && mv ${output_dir}primary_aligment.tmp ${output_dir}primary_aligment.txt
@@ -289,7 +289,7 @@ parseBam(){
 	
 	fi
 
-        #looking for chimeric alignments with the number of seq (with GSNAP, assembly is split in reads 1 & 2 on 2 chromosomes, and these don't have the flag 0x800)
+    #looking for chimeric alignments with the number of seq (with GSNAP, assembly is split in reads 1 & 2 on 2 chromosomes, and these don't have the flag 0x800)
 	IDs=($($samtools view -F 4 -f 0x1 $bam_file|cut -f 1|sort -u))
 
         #keep only ID & chromosome
