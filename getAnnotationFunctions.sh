@@ -245,16 +245,16 @@ parseModifiedBed(){
 
 parseBam(){
       
-    bam_file=$1
-    output_table=${2}
+        bam_file=$1
+        output_table=${2}
         output_bed=${3}
      
-    if [ -f $output_table ];then rm $output_table ; fi
-    if [ -f $output_bed ];then rm $output_bed ; fi
+        if [ -f $output_table ];then rm $output_table ; fi
+        if [ -f $output_bed ];then rm $output_bed ; fi
         
-    $samtools view -H $bam_file >${output_dir}sam_header.txt
+        $samtools view -H $bam_file >${output_dir}sam_header.txt
         
-    #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
+        #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
 	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|cat ${output_dir}sam_header.txt - |samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${output_dir}primary_aligment.txt
 	
 	#remove /1 or /2 that could be added by betools for read1 or read2
