@@ -73,7 +73,7 @@ parseModifiedBed(){
 	 
 	   nb_deletion=0
 	   if [[ ${#split_nb_deletion[*]} -ne 0 ]];then
-	 #!/bin/bash
+	 
 		 for i in $(seq 0 $((${#split_nb_deletion[*]}-1)));do
 		 
 		    nb_deletion=$((nb_deletion+${split_nb_deletion[i]}))
