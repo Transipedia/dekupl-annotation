@@ -12,7 +12,7 @@ Required dependencies :
 ========================================================
 
 
-Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < output_dir > -i < path to illumina adapters > [options]
+Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
 
 	Options :
 
@@ -61,7 +61,7 @@ Steps of the annotation :
 	
     8- The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
 	
-	9- From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic), and a pdf are built (DiffContigsInfos.tsv & ContigsPerLoci.pdf).                  
+	9- From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (DiffContigsInfos.tsv).                  
 	
 ========================================================
 
