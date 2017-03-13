@@ -4,7 +4,7 @@
 
 #add as features : is_mapped, aligner, intronic, other-split (like chimeric alignment flag 0x800)
 
- usage() { echo -e "Usage: $0 -a <contigs from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <output_dir> -i <path to illumina adapters> [options]\n\n\tOptions :\n
+ usage() { echo -e "Usage: $0 -a <contigs from DEkupl> -g <genome in fasta> -d <diff genes from DEkupl> -r <reference annotation (gff3 format)> -o <full path to output directory> -i <path to illumina adapters> [options]\n\n\tOptions :\n
                   -b <path to bin/ of blast scripts (default : in \$PATH environment variable)>\n
                   -c <path to bedtools, preferentially 2.24 (default : in \$PATH environment variable)>\n
                   -j <GSNAP index name>\n
