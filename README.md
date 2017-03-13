@@ -78,14 +78,8 @@ Description of the outputs :
 ========================================================
 
 Miscellaneous :
-
-  
-
-  	- If the file "nomatch_in_adapters.fa" containing unmapped contigs on the adapters is created, the step of blast on adapters will be avoided. If you want to re-run it anyway, put in comment the if-statement.
-  
-  	- If the alignemnt file of contigs is already created, this step will be avoided. If you want to re-run it anyway, put in comment the if-statement.
   	
-  	- If Blast data bases for the human genome and the adapters is already created, this step in the script blast.sh will be avoided.
+  	- If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
   	
   	- The Blast of unmapped contigs on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many, and run blast on each sub-file (with xargs) to speed up.
 
