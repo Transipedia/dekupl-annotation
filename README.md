@@ -73,8 +73,6 @@ Description of the outputs :
  	
  	3- ContigsPerLoci.tsv : contigs grouped by loci (genic, antisense, intergenic). The locus ID for a genic/antisense locus is the HUGO ID. For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene,3'-gene, separated by "&".
  	
- 	5- ContigsPerLoci.pdf : Result of "ContigsPerLoci.tsv" in barplots
- 	
 ========================================================
 
 Miscellaneous :
