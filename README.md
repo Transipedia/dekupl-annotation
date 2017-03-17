@@ -2,12 +2,12 @@
 
 Required dependencies :
 
-	- bash
-	- awk
-	- R libraries foreach & doParallel
-	- bedtools >= 2.24 (preferentially 2.24)
-	- Blast 2.5.0+
-	- GSNAP
+	* bash
+	* awk
+	* R libraries foreach & doParallel
+	* bedtools >= 2.24 (preferentially 2.24)
+	* Blast 2.5.0+
+	* GSNAP
 
 ========================================================
 
