@@ -1,6 +1,6 @@
 
 
-Required dependencies :
+# Required dependencies :
 
 	* bash
 	* awk
@@ -12,7 +12,7 @@ Required dependencies :
 ========================================================
 
 
-Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
+# Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
 
 	Options :
 
@@ -31,8 +31,10 @@ Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta
                   -s        path to samtools (default : in $PATH environment variable)
 
                   -n        thread number (default : 1)
+                  
+========================================================               
 
-	Results :
+# Results :
 
                   - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
 
@@ -41,7 +43,7 @@ Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta
                   
                   - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
           
-========================================================                  
+   
                   
 Steps of the annotation : 
 
