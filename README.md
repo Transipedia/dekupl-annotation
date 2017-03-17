@@ -1,7 +1,4 @@
-
-
 # Required dependencies :
-
 	* bash
 	* awk
 	* R libraries foreach & doParallel
