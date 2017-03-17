@@ -13,7 +13,7 @@
 
 
 # Usage : 
-./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
+./getContigsAnnotation.sh -a `< contigs from DEkupl >` -g `< genome in fasta >` -d `< diff genes from DEkupl >` -r `< reference annotation (gff3 format) >` -o `< full path to output directory >` -i `< path to illumina adapters >` [options]
 
 	Options :
 
@@ -37,7 +37,9 @@
 
 # Results :
                   - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
+                  
                   - BED "file diff_contigs.bed" for the visualization ; it contains useful informations from the summarization table.
+                  
                   - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
           
    
