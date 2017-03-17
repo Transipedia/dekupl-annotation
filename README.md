@@ -9,9 +9,6 @@
 	* Blast 2.5.0+
 	* GSNAP
 
-========================================================
-
-
 # Usage : 
 ./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
 
@@ -32,8 +29,6 @@
                   -s        path to samtools (default : in $PATH environment variable)
 
                   -n        thread number (default : 1)
-                  
-========================================================               
 
 # Results :
     - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
@@ -42,8 +37,6 @@
                   
     - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
           
-   
-                  
 # Steps of the annotation : 
 
 	1- Contigs from merged-diff-counts.tsv.gz are converted in fasta.
@@ -72,8 +65,6 @@
  	
  	3- ContigsPerLoci.tsv : contigs grouped by loci (genic, antisense, intergenic). The locus ID for a genic/antisense locus is the HUGO ID. For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene,3'-gene, separated by "&".
  	
-========================================================
-
 # Miscellaneous :
   	
   	- If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
