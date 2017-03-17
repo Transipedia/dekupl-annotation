@@ -13,7 +13,7 @@
 
 
 # Usage : 
-./getContigsAnnotation.sh -a `< contigs from DEkupl >` -g `< genome in fasta >` -d `< diff genes from DEkupl >` -r `< reference annotation (gff3 format) >` -o `< full path to output directory >` -i `< path to illumina adapters >` [options]
+./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
 
 	Options :
 
@@ -46,7 +46,7 @@
                   
 # Steps of the annotation : 
 
-	1- Contigs from merged-diff-counts.tsv are converted in fasta.
+	1- Contigs from merged-diff-counts.tsv.gz are converted in fasta.
 	
 	2- Contigs which align on the adapters are filtered out.
 	
