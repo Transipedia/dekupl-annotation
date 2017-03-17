@@ -7,7 +7,7 @@
 	* GSNAP
 
 # Usage : 
-./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
+./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz (contigs from DEkupl)` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv (diff. genes from DEkupl)` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
 
 	Options :
 
