@@ -36,33 +36,33 @@
 ========================================================               
 
 # Results :
-                  - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
+    - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
                   
-                  - BED "file diff_contigs.bed" for the visualization ; it contains useful informations from the summarization table.
+    - BED "file diff_contigs.bed" for the visualization ; it contains useful informations from the summarization table.
                   
-                  - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
+    - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
           
    
                   
 # Steps of the annotation : 
 
-	1- Contigs from merged-diff-counts.tsv.gz are converted in fasta.
+	1. Contigs from merged-diff-counts.tsv.gz are converted in fasta.
 	
-	2- Contigs which align on the adapters are filtered out.
+	2. Contigs which align on the adapters are filtered out.
 	
-	3- The clean contigs are mapped on the genome with GSNAP.
+	3. The clean contigs are mapped on the genome with GSNAP.
 	
-	4- The BAM file is parsed to obtain a primary BED12 file (diff_contigs.bed), and a table summarizing the alignment (DiffContigsInfos.tsv). This step is parallelized.
+	4. The BAM file is parsed to obtain a primary BED12 file (diff_contigs.bed), and a table summarizing the alignment (DiffContigsInfos.tsv). This step is parallelized.
 	
-	5- Unmapped contigs with GSNAP are aligned on the genome with Blast. Those with full length alignment are pushed in the BED12 and the  summarizing table.
+	5. Unmapped contigs with GSNAP are aligned on the genome with Blast. Those with full length alignment are pushed in the BED12 and the  summarizing table.
 	
-	6- The BED12 file is enriched with infos from merged-diff-counts.tsv.
+	6. The BED12 file is enriched with infos from merged-diff-counts.tsv.
 	
-	7- Unaligned contigs are pushed in the summarizing table, with the appropriates values "NA", "F" or "none".
+	7. Unaligned contigs are pushed in the summarizing table, with the appropriates values "NA", "F" or "none".
 	
-    8- The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
+    8. The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
 	
-	9- From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (DiffContigsInfos.tsv).                  
+	9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (DiffContigsInfos.tsv).                  
 	
 ========================================================
 
