@@ -12,7 +12,8 @@
 ========================================================
 
 
-# Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
+# Usage : 
+./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta > -d < diff genes from DEkupl > -r < reference annotation (gff3 format) > -o < full path to output directory > -i < path to illumina adapters > [options]
 
 	Options :
 
@@ -35,17 +36,13 @@
 ========================================================               
 
 # Results :
-
                   - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
-
                   - BED "file diff_contigs.bed" for the visualization ; it contains useful informations from the summarization table.
-
-                  
                   - Table "ContigsPerLoci.tsv" containing loci with differentially expressed contigs
           
    
                   
-Steps of the annotation : 
+# Steps of the annotation : 
 
 	1- Contigs from merged-diff-counts.tsv are converted in fasta.
 	
@@ -67,7 +64,7 @@ Steps of the annotation :
 	
 ========================================================
 
-Description of the outputs :
+# Description of the outputs :
 
  	1- diff_contigs.bed : BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -), with intensity scaled on the abs(log2FC).
  	
@@ -77,7 +74,7 @@ Description of the outputs :
  	
 ========================================================
 
-Miscellaneous :
+# Miscellaneous :
   	
   	- If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
   	
