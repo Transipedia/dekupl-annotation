@@ -34,7 +34,7 @@ Usage: ./getContigsAnnotation.sh -a < contigs from DEkupl > -g < genome in fasta
 
 	Results :
 
-                  - \Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\
+                  - Table "DiffContigsInfos.tsv", summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
 
                   - BED "file diff_contigs.bed" for the visualization ; it contains useful informations from the summarization table.
 
