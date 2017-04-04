@@ -4,12 +4,12 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 
 ## Required dependencies :
 
-* bash
-* awk
-* R libraries foreach & doParallel
-* bedtools >= 2.24 (preferentially 2.24)
-* Blast 2.5.0+
-* GSNAP
+* bash (version >= 4.3.46)
+* awk (version >= 4.1.3)
+* R (version >= version 3.2.3) with libraries foreach & doParallel
+* bedtools (version >=2.24 ; preferentially 2.24)
+* Blast (version >= 2.5.0+)
+* GSNAP (version >= 2016-11-07)
 
 ## Usage : 
 
