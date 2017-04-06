@@ -49,7 +49,7 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 6. The BED12 file is enriched with infos from merged-diff-counts.tsv.
 7. Unaligned contigs are pushed in the summarizing table, with the appropriates values "NA", "F" or "none".
 8. The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
-9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (`DiffContigsInfos.tsv`).                  
+9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (`ContigsPerLoci.tsv`).                  
 
 ## Description of the outputs :
 
