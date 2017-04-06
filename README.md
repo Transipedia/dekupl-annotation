@@ -11,6 +11,8 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 * Blast (version >= 2.5.0+)
 * GSNAP (version >= 2016-11-07)
 
+Note: needs sufficient memory to index the genome (as much as gmap_build needs, a few tens of GB's).
+
 ## Usage : 
 
     ./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz (contigs from DEkupl)` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv (diff. genes from DEkupl)` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
