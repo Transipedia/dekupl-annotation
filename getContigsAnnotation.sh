@@ -163,8 +163,7 @@ GSNAP_loc="${GSNAP_loc}/"
 GSNAP_loc=$(echo "$GSNAP_loc" |sed 's/\/\//\//g')
 
 
-#if one of useful argument is missing, exit with the usage 
- 
+#if one of the useful arguments is missing, exit with the usage 
 if [ "$DEkupl_result" == "" ] || [ "$ref_fasta" == "" ] || [ "$diff_genes" == "" ] || [ "$ref_annotation" == "" ] || [ "$output_dir" == "" ] || [ "$illumina_adapters" == "" ] || [ "$samtools" == "" ] || [ "$bedtools" == "" ] || [ "$ncbi_blast_loc" == "" ] || [ "$GSNAP_loc" == "" ] || ([ "$stranded" != "yes" ] && [ "$stranded" != "no" ]); then
       
 echo -e "\none required argument is missing or is wrong (check also if all the programs are installed) !!\n"
