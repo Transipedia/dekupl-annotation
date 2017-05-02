@@ -15,7 +15,7 @@ Note: needs sufficient memory to index the genome (as much as gmap_build needs, 
 
 ## Usage : 
 
-    ./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz (contigs from DEkupl)` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv (diff. genes from DEkupl)` > -r < `reference annotation (gff3 format)` > -o < `full path to output directory` > -i < `adapters in fasta` > [options]
+    ./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz (contigs from DEkupl)` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv (diff. genes from DEkupl)` > -r < `reference annotation (gff3 format)` > -t <stranded data (choose between "yes" or "no")> -o < `full path to output directory` > -i < `adapters in fasta` (you can use the file adapters.fa supplied with the program)> [options]
 
       Options :
 
@@ -51,13 +51,13 @@ Note: needs sufficient memory to index the genome (as much as gmap_build needs, 
 6. The BED12 file is enriched with infos from merged-diff-counts.tsv.
 7. Unaligned contigs are pushed in the summarizing table, with the appropriates values "NA", "F" or "none".
 8. The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
-9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic) is built (`ContigsPerLoci.tsv`).                  
+9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic, unmapped) is built (`DiffContigsInfos.tsv`).                  
 
 ## Description of the outputs :
 
 1. **`diff_contigs.bed`** : BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -), with intensity scaled on the abs(log2FC).
 2. **`DiffContigsInfos.tsv`** : summary of all supplied contigs, no matter that they are aligned or not. The file `Contigs_Ontology_24_11_2016.xlsx` supplied with this README gives the ontology used. The column "TERM" in this xlsx file gives all the columns added by the annotation in the summarizing table.
-3. **`ContigsPerLoci.tsv`** : contigs grouped by loci (genic, antisense, intergenic). The locus ID for a genic/antisense locus is the HUGO ID. For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene,3'-gene, separated by "&".
+3. **`ContigsPerLoci.tsv`** : contigs grouped by loci (genic, antisense, intergenic, unmapped). The locus ID for a genic/antisense locus is the Ensembl ID followed by the strand (separated by "&"). For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene, 3'-gene (separated by "&").
  	
 ## Miscellaneous :
   	
