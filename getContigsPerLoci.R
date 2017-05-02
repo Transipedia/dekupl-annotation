@@ -20,7 +20,7 @@ home<-args[1]
 setwd(home)
 
 #input table of Contigs with their infos.
-mytable<-args[2]
+initial_table<-args[2]
 
 nb_cores<-args[3]
 
@@ -30,12 +30,12 @@ nb_cores<-args[3]
 #this function will clusterize Contigs following their locus (genic,antisense,intergenic)
 #####################################
 
-#argument "myContigs" : initial table 
+#argument "initial_table" : DiffContigsInfos.tsv 
 #other arguments : columns names from the initial table, used during the processing
 #nb_cores : number of cores to use during the processing
 #remark : if the name of the columns from the input data has changed, you just have to change the values here for each argument
 #it returns a data frame
-clusterContigs<-function(myContigs,
+clusterContigs<-function(initial_table="",
                          is_mapped="is_mapped",
                          chromosome="chromosome",
                          start="start",
@@ -50,35 +50,36 @@ clusterContigs<-function(myContigs,
                          pvalue="pvalue",
                          log2FC="log2FC",
                          nb_merged_kmers="nb_merged_kmers",
-                         nb_cores){
+                         nb_cores=1){
+                                                
+  initial_table<-read.delim(initial_table,sep="\t",header=T)
   
-  myContigs<-read.delim(myContigs,sep="\t",header=T)
+  mappedContigs<-initial_table[which(initial_table[is_mapped]==T),]
   
-  myContigs<-myContigs[which(myContigs[is_mapped]==T),]
+  unmappedContigs<-initial_table[which(initial_table[is_mapped]==F),]
+  
+  if(nrow(unmappedContigs)>0){unmappedContigs<-unmappedContigs[order(unmappedContigs[pvalue]),]}
   
   #for each contig, create a new ID with chrs, strand, 5'gene, 3'gene, separated by "&" (for genic or antisense contigs, we just keep sense gene/antisense gene and strand)
-  myContigs$new_ID<-paste(myContigs[,chromosome],myContigs[,strand],myContigs[,gene_5p],myContigs[,gene_3p],sep="&")
+  mappedContigs$new_ID<-paste(mappedContigs[,chromosome],mappedContigs[,strand],mappedContigs[,gene_5p],mappedContigs[,gene_3p],sep="&")
   
-  for(line in 1:nrow(myContigs)){
+  for(line in 1:nrow(mappedContigs)){
     
-    if(as.character(myContigs[line,EnsemblGeneCol])!="none"){
+    if(as.character(mappedContigs[line,EnsemblGeneCol])!="none"){
       
-      myContigs[line,"new_ID"]<-paste(myContigs[line,EnsemblGeneCol],myContigs[line,strand],sep="&")
+      mappedContigs[line,"new_ID"]<-paste(mappedContigs[line,EnsemblGeneCol],mappedContigs[line,strand],sep="&")
       
       
-    }else if(as.character(myContigs[line,Ensembl_AS_GeneCol])!="none"){
+    }else if(as.character(mappedContigs[line,Ensembl_AS_GeneCol])!="none"){
       
-      myContigs[line,"new_ID"]<-paste(myContigs[line,Ensembl_AS_GeneCol],myContigs[line,strand],sep="&")
+      mappedContigs[line,"new_ID"]<-paste(mappedContigs[line,Ensembl_AS_GeneCol],mappedContigs[line,strand],sep="&")
       
     }
     
   }
   
   #unique on the new IDs
-  myIDs<-unique(as.character(myContigs[,"new_ID"]))
-  
-  #set the number of cores to use
-  if(nb_cores==""){nb_cores=getDoParWorkers()}
+  myIDs<-unique(as.character(mappedContigs[,"new_ID"]))
   
   print(paste("number of cores to use : ",nb_cores,sep=""))
   
@@ -87,79 +88,96 @@ clusterContigs<-function(myContigs,
   #retrieve for each ID, all Contigs
   result<-foreach(i=1:length(myIDs), .combine=rbind) %dopar% {
     
-    ContigsOfOneID<-myContigs[which(myContigs["new_ID"]==myIDs[i]),]
-    
-    #number of contigs in the locus
-    nb_contigs<-nrow(ContigsOfOneID)
-    
-    min_start<-min(ContigsOfOneID[start])
-    
-    max_end<-max(ContigsOfOneID[end])
-    
-    ContigsOfOneID<-ContigsOfOneID[order(ContigsOfOneID[pvalue],-abs(ContigsOfOneID[log2FC])),]
-    
-    Best_P_value<-ContigsOfOneID[1,pvalue]
-    
-    log2FC_of_Best<-ContigsOfOneID[1,log2FC]
-    
-    meanCond1_of_Best<-ContigsOfOneID[1,grep("mean",value=T,names(ContigsOfOneID))][1]
-    meanCond2_of_Best<-ContigsOfOneID[1,grep("mean",value=T,names(ContigsOfOneID))][2]
-    
-    locus_ID<-ContigsOfOneID[1,"new_ID"]
-    
-    #if the Contigs overlap a sense gene, locus_ID = sense gene ID
-    if(as.character(ContigsOfOneID[1,EnsemblGeneCol])!="none"){
-      
-      gene_name<-paste(as.character(ContigsOfOneID[1,HugoGeneCol]))
-      
-      locusType<-"genic"
-      
-      #number of kmers in the locus
-      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
-      
-      #if the Contigs don't overlap a sense gene and overlap an antisense gene, locus_ID = antisense gene ID
-    }else if(as.character(ContigsOfOneID[1,EnsemblGeneCol])=="none" & as.character(ContigsOfOneID[1,Ensembl_AS_GeneCol])!="none"){
-      
-      gene_name<-paste(as.character(ContigsOfOneID[1,Hugo_AS_GeneCol]))
-      
-      locusType<-"antisense"
-      
-      #number of kmers in the locus
-      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
-      
-      #if the Contigs don't overlap a sense gene and an antisense gene, they are intergenics, locus_ID = chrs & strand & 5'-gene & 3'-gene
-    }else{
-      
-      #intergenic Contigs may have missing neighbors ; if both are missing, just keep the chromosome
-      locus_ID<-gsub("&none&none$","",locus_ID)
-      
-      gene_name="none"
-      
-      locusType<-"intergenic"
-      
-      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
-      
-    }
-    
-    data.frame(locus_ID=locus_ID,
-               gene_name=gene_name,
-               nb_contigs=nb_contigs,
-               nb_kmers=nb_kmers,
-               Best_P_value=Best_P_value,
-               log2FC_of_Best=log2FC_of_Best,
-               meanCond1_of_Best,
-               meanCond2_of_Best,
-               chromosome=as.character(ContigsOfOneID[1,chromosome]),
-               start=min_start,
-               end=max_end,
-               strand=as.character(ContigsOfOneID[1,strand]),
-               locus_type=locusType,stringsAsFactors= F)
+	    ContigsOfOneID<-mappedContigs[which(mappedContigs["new_ID"]==myIDs[i]),]
+	    
+	    #number of contigs in the locus
+	    nb_contigs<-nrow(ContigsOfOneID)
+	    
+	    min_start<-min(ContigsOfOneID[start])
+	    
+	    max_end<-max(ContigsOfOneID[end])
+	    
+	    ContigsOfOneID<-ContigsOfOneID[order(ContigsOfOneID[pvalue],-abs(ContigsOfOneID[log2FC])),]
+	    
+	    Best_P_value<-ContigsOfOneID[1,pvalue]
+	    
+	    log2FC_of_Best<-ContigsOfOneID[1,log2FC]
+	    
+	    meanCond1_of_Best<-ContigsOfOneID[1,grep("mean",value=T,names(ContigsOfOneID))][1]
+	    meanCond2_of_Best<-ContigsOfOneID[1,grep("mean",value=T,names(ContigsOfOneID))][2]
+	    
+	    locus_ID<-ContigsOfOneID[1,"new_ID"]
+	    
+	    #if the Contigs overlap a sense gene, locus_ID = sense gene ID
+	    if(as.character(ContigsOfOneID[1,EnsemblGeneCol])!="none"){
+	      
+	      gene_name<-paste(as.character(ContigsOfOneID[1,HugoGeneCol]))
+	      
+	      locusType<-"genic"
+	      
+	      #number of kmers in the locus
+	      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
+	      
+	      #if the Contigs don't overlap a sense gene and overlap an antisense gene, locus_ID = antisense gene ID
+	    }else if(as.character(ContigsOfOneID[1,EnsemblGeneCol])=="none" & as.character(ContigsOfOneID[1,Ensembl_AS_GeneCol])!="none"){
+	      
+	      gene_name<-paste(as.character(ContigsOfOneID[1,Hugo_AS_GeneCol]))
+	      
+	      locusType<-"antisense"
+	      
+	      #number of kmers in the locus
+	      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
+	      
+	      #if the Contigs don't overlap a sense gene and an antisense gene, they are intergenics, locus_ID = chrs & strand & 5'-gene & 3'-gene
+	    }else{
+	      
+	      #intergenic Contigs may have missing neighbors ; if both are missing, just keep the chromosome
+	      locus_ID<-gsub("&none&none$","",locus_ID)
+	      
+	      gene_name="none"
+	      
+	      locusType<-"intergenic"
+	      
+	      nb_kmers<-sum(as.numeric(as.character(ContigsOfOneID[,nb_merged_kmers])))
+	      
+	    }
+	    
+	    data.frame(locus_ID=locus_ID,
+		       gene_name=gene_name,
+		       nb_contigs=nb_contigs,
+		       nb_kmers=nb_kmers,
+		       Best_P_value=Best_P_value,
+		       log2FC_of_Best=log2FC_of_Best,
+		       meanCond1_of_Best,
+		       meanCond2_of_Best,
+		       chromosome=as.character(ContigsOfOneID[1,chromosome]),
+		       start=min_start,
+		       end=max_end,
+		       strand=as.character(ContigsOfOneID[1,strand]),
+		       locus_type=locusType,stringsAsFactors= F)
+  }
+  
+  #add the corresponding columns for the "locus" of unmapped contigs
+  if(nrow(unmappedContigs)>0){
+  
+	  result<-rbind(result,data.frame(locus_ID="unmapped",
+		                          gene_name="none",
+		                          nb_contigs=nrow(unmappedContigs),
+		                          nb_kmers=sum(as.numeric(as.character(unmappedContigs[,nb_merged_kmers]))),
+		                          Best_P_value=unmappedContigs[1,pvalue],
+		                          log2FC_of_Best=unmappedContigs[1,log2FC],
+		                          meanCond1_of_Best=unmappedContigs[1,grep("mean",value=T,names(unmappedContigs))][1],
+		                          meanCond2_of_Best=unmappedContigs[1,grep("mean",value=T,names(unmappedContigs))][2],
+		                          chromosome="none",
+		                          start=NA,
+		                          end=NA,
+		                          strand="none",
+		                          locus_type="unmapped"))
   }
   
   return(result)
 }
 
 #example
-myresult<-clusterContigs(mytable)
+myresult<-clusterContigs(initial_table=initial_table,nb_cores=nb_cores)
 write.table(myresult,file="ContigsPerLoci.tsv",sep="\t",row.names=F, col.names=T, quote=F)
-
