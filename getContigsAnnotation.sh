@@ -12,7 +12,7 @@
                   - Table \"DiffContigsInfos.tsv\", summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\n
                   - BED \"file diff_contigs.bed\" for the visualization ; it contains useful informations from the summarization table.\n
                   
-                  - Table \"contigsPerLoci.txt\" containing loci with differentially expressed contigs\n" 1>&2; exit 1;}
+                  - Table \"contigsPerLoci.tsv\" containing loci with differentially expressed contigs\n" 1>&2; exit 1;}
 
 [[ $# -eq 0 ]] && usage
 
