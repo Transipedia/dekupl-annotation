@@ -12,7 +12,7 @@
                   - Table \"DiffContigsInfos.tsv\", summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\n
                   - BED \"file diff_contigs.bed\" for the visualization ; it contains useful informations from the summarization table.\n
                   
-                  - Table \"contigsPerLoci.tsv\" containing loci with differentially expressed contigs\n" 1>&2; exit 1;}
+                  - Table \"contigsPerLoci.tsv\" (only for stranded data for now) containing loci with differentially expressed contigs \n" 1>&2; exit 1;}
 
 [[ $# -eq 0 ]] && usage
 
@@ -555,14 +555,19 @@ cat ${output_dir}header.txt $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.t
 #remove the additional "tag" column
 cut -f 1-33,35- $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 sed 's/assembly/contig/g' $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
-echo -e "\n==== Clustering of the contigs by loci (genic/antisense/intergenic) ====\n"
 
-#cluster contigs per loci
-start_date=$(date)	
-$getContigsPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
-end_date=$(date)
+if [ "$stranded" == "yes" ];then
+       
+        echo -e "\n==== Clustering of the contigs by loci (genic/antisense/intergenic) ====\n"
+	
+	#cluster contigs per loci
+	start_date=$(date)	
+	$getContigsPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
+	end_date=$(date)
 
-echo -e "\nstart clustering of contigs : $start_date\n"
-echo -e "\nend clustering of contigs : $end_date\n"
+	echo -e "\nstart clustering of contigs : $start_date\n"
+	echo -e "\nend clustering of contigs : $end_date\n"
+
+fi
 
 rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaTags.tmp
