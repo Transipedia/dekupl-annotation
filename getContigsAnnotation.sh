@@ -437,7 +437,8 @@ awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_c
 
 if [ "$stranded" == "yes" ];then 
 
-	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print $1,$5}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
+        #remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/gene_name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
 	
 else
 
@@ -449,9 +450,10 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #searching sense tags (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
+#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
 awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}sense_tags.txt
 
-paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$5}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
+paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/gene_name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
 
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}sense_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
