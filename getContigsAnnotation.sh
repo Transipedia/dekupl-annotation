@@ -12,7 +12,7 @@
                   - Table \"DiffContigsInfos.tsv\", summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations\n
                   - BED \"file diff_contigs.bed\" for the visualization ; it contains useful informations from the summarization table.\n
                   
-                  - Table \"contigsPerLoci.txt\" containing loci with differentially expressed contigs\n" 1>&2; exit 1;}
+                  - Table \"contigsPerLoci.tsv\" (only for stranded data for now) containing loci with differentially expressed contigs \n" 1>&2; exit 1;}
 
 [[ $# -eq 0 ]] && usage
 
@@ -429,7 +429,6 @@ $samtools view -H ${mapping_output}contigs.bam | grep -E -v "^@PG|^@HD" | awk 'O
 start_date=$(date)
 
 #searching antisense tags, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-
 if [ "$stranded" == "yes" ];then orientation_option="-s" ;dist_option="a";else orientation_option="";dist_option="ref"; fi
 
 awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}antisense_tags.txt
@@ -437,7 +436,9 @@ awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_c
 
 if [ "$stranded" == "yes" ];then 
 
-	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print $1,$5}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
+        #remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}')\
+	<(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
 	
 else
 
@@ -451,7 +452,9 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 #searching sense tags (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
 awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}sense_tags.txt
 
-paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$5}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};sub("ID=","",$1);sub("gene_name=","",$2);print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
+#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
+paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}')\
+<(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
 
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}sense_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
@@ -555,14 +558,19 @@ cat ${output_dir}header.txt $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.t
 #remove the additional "tag" column
 cut -f 1-33,35- $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 sed 's/assembly/contig/g' $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
-echo -e "\n==== Clustering of the contigs by loci (genic/antisense/intergenic) ====\n"
 
-#cluster contigs per loci
-start_date=$(date)	
-$getContigsPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
-end_date=$(date)
+if [ "$stranded" == "yes" ];then
+       
+        echo -e "\n==== Clustering of the contigs by loci (genic/antisense/intergenic) ====\n"
+	
+	#cluster contigs per loci
+	start_date=$(date)	
+	$getContigsPerLoci $output_dir $FinalTable $threads || { echo "R script failure !" 1>&2; exit; }
+	end_date=$(date)
 
-echo -e "\nstart clustering of contigs : $start_date\n"
-echo -e "\nend clustering of contigs : $end_date\n"
+	echo -e "\nstart clustering of contigs : $start_date\n"
+	echo -e "\nend clustering of contigs : $end_date\n"
+
+fi
 
 rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaTags.tmp

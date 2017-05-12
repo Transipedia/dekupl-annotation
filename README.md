@@ -39,7 +39,7 @@ Note: needs sufficient memory to index the genome (as much as gmap_build needs, 
 
 - Table `DiffContigsInfos.tsv`, summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
 - BED `file diff_contigs.bed` for the visualization ; it contains useful informations from the summarization table.
-- Table `ContigsPerLoci.tsv` containing loci with differentially expressed contigs
+- Table `ContigsPerLoci.tsv` (only for stranded data for now) containing loci with differentially expressed contigs
           
 ## Steps of the annotation : 
 
@@ -60,6 +60,7 @@ Note: needs sufficient memory to index the genome (as much as gmap_build needs, 
 3. **`ContigsPerLoci.tsv`** : contigs grouped by loci (genic, antisense, intergenic, unmapped). The locus ID for a genic/antisense locus is the Ensembl ID followed by the strand (separated by "&"). For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene, 3'-gene (separated by "&").
  	
 ## Miscellaneous :
-  	
+
+- After the downloading of `dekupl-annotation`, make `chmod 755 *.{sh,R}` in the directory to avoid rights issues
 - If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
 - The Blast of unmapped contigs on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many, and run blast on each sub-file (with xargs) to speed up.
