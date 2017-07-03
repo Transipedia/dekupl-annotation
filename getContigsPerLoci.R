@@ -60,7 +60,8 @@ clusterContigs<-function(initial_table="",
   
   if(nrow(unmappedContigs)>0){unmappedContigs<-unmappedContigs[order(unmappedContigs[pvalue]),]}
   
-  #for each contig, create a new ID with chrs, strand, 5'gene, 3'gene, separated by "&" (for genic/antisense contigs, we will just keep sense gene/antisense gene and strand)
+  #for each contig, create a new ID with chrs, strand, 5'gene, 3'gene, separated by "&" (for genic or antisense contigs, we will just keep sense gene/antisense gene and strand)
+
   IDs_matrix<-as.matrix(data.frame(as.character(mappedContigs[,EnsemblGeneCol]),
                                    as.character(mappedContigs[,Ensembl_AS_GeneCol]),
                                    as.character(mappedContigs[,strand]),
