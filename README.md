@@ -10,6 +10,7 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 * bedtools (version >=2.24 ; preferentially 2.24)
 * Blast (version >= 2.5.0+)
 * GSNAP (version >= 2016-11-07)
+* samtools (version >= 1.3)
 
 Note: needs sufficient memory to index the genome (as much as gmap_build needs, a few tens of GB's).
 
