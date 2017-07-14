@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-
 args <- commandArgs(TRUE)
 
 if (length(args)==0){
@@ -10,7 +9,6 @@ if (length(args)==0){
 library(foreach)
 
 library(doParallel)
-
 
 ########### arguments ###############
 #####################################
@@ -22,8 +20,6 @@ home<-args[1]
 initial_table<-args[2]
 
 nb_cores<-args[3]
-
-
 
 ########### function ###############
 #this function will clusterize Contigs following their locus (genic, antisense, intergenic, unmapped)
