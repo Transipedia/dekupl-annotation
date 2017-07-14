@@ -17,7 +17,6 @@ library(doParallel)
 
 #output directory
 home<-args[1]
-setwd(home)
 
 #input table of Contigs with their infos.
 initial_table<-args[2]
@@ -198,4 +197,4 @@ clusterContigs<-function(initial_table="",
 
 #example
 myresult<-clusterContigs(initial_table=initial_table,nb_cores=nb_cores)
-write.table(myresult,file="ContigsPerLoci.tsv",sep="\t",row.names=F, col.names=T, quote=F)
+write.table(myresult,file=paste(home,"ContigsPerLoci.tsv",sep=""),sep="\t",row.names=F, col.names=T, quote=F)
