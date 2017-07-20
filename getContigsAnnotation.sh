@@ -344,7 +344,7 @@ start_date=$(date)
 	  
 	  #1st block : print tag ID,lineInSAM,chr,start,end,strand,nb_mismatch,gaps,nb_hit
 	  #2nd block : reorganize the columns in order to add them to the final table, SNV is added just after ins : line_in_SAM,tagID,is_mapped,mapper,chr,start,end,junction,nb_junction,exon_coord_list,other_split,strand,nb_hit,mis,del,ins,SNV,clipped_5p,clipped_3p
-	  echo -e "$line\t$multihit" | awk 'OFS="\t"{sub("-","\t",$1);print}' | awk 'OFS="\t"{if($7>0 || $8>0){SNV="T"}else{SNV="F"};print $2,$1,"T","Blast",$3,$4,$5,"none",0,$3":"$4"-"$5,"F",$6,$9,$7,$8,0,SNV,0,0}' | tee -a ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 | awk 'OFS="\t"{print}' >>$FinalTable
+	  echo -e "$line\t$multihit" | awk 'OFS="\t"{sub("-","\t",$1);print}' | awk 'OFS="\t"{if($7>0 || $8>0){SNV="T"}else{SNV="F"};print $2,$1,"T","Blast",$3,$4,$5,"none",0,$3":"$4"-"$5,"F",$6,$9,$7,$8,0,SNV,0,0}' | awk 'OFS="\t"{if($6>$7){start=$7;end=$6;$6=start;$7=end;print}else{print $0}}' | tee -a ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 | awk 'OFS="\t"{print}' >>$FinalTable
 
 	done < ${output_dir}UnmappedEntirelyFoundByBlast.txt
 	
@@ -353,7 +353,7 @@ start_date=$(date)
 	if [ -f ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 ];then
 
 	  #put the result in the bed file 
-	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
+	  awk 'OFS="\t"{if($12=="+"){color="255,0,0"}else{color="0,0,255"};$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,color,1,$7-$6,0}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
 
           #contigs still unmapped after the previous method
 	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedTags.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedTags.txt) >${output_dir}unmapped_tags_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
