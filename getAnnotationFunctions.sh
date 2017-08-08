@@ -260,19 +260,19 @@ parseBam(){
         $samtools view -H $bam_file >${output_dir}sam_header.txt
         
         #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
-	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|cat ${output_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${output_dir}primary_aligment.txt
+	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|cat ${output_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${output_dir}primary_aligment.txt
 	
 	#remove /1 or /2 that could be added by bedtools for read1 or read2
 	awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' ${output_dir}primary_aligment.txt >${output_dir}primary_aligment.tmp && mv ${output_dir}primary_aligment.tmp ${output_dir}primary_aligment.txt
 
         #get the CIGAR
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|cut -f 6 >${output_dir}CIGAR.txt
+	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|cut -f 6 >${output_dir}CIGAR.txt
 
         #get the MD tag
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3 |grep -o "MD\:Z:.*\s"|cut -f 1 >${output_dir}MD_tag.txt
+	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3 |grep -o "MD\:Z:.*\s"|cut -f 1 >${output_dir}MD_tag.txt
 
         #get the NH tag
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |sort -k 1,1 -k10,10nr|sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |sort -k1,1 -k3,3|grep -o -E "NH\:i\:[0-9]+"|sed 's/NH\:i\://g' >${output_dir}NH_tag.txt
+	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|grep -o -E "NH\:i\:[0-9]+"|sed 's/NH\:i\://g' >${output_dir}NH_tag.txt
 	
 	
 	#paste col ID+bed12 with the CIGAR, NH tag, & MD tag (no need to use join, we have used the same samtools commands)
@@ -294,7 +294,7 @@ parseBam(){
 	fi
 
         #looking for chimeric alignments with the number of seq (with GSNAP, assembly is split in reads 1 & 2 on 2 chromosomes, and these don't have the flag 0x800)
-	IDs=($($samtools view -F 4 -f 0x1 $bam_file|cut -f 1|sort -u))
+	IDs=($($samtools view -F 4 -f 0x1 $bam_file|cut -f 1|LANG=en_EN sort -u))
 
         #keep only ID & chromosome
 	$samtools view -f 0x1 $bam_file|cut -f 1,3 >${output_dir}chimeric_split2.tmp
@@ -308,7 +308,7 @@ parseBam(){
 
 		   One_ID=${IDs[$i]}
 		  
-		   all_chr=$(grep "$One_ID" ${output_dir}chimeric_split2.tmp |cut -f 2|sort -u|wc -l)
+		   all_chr=$(grep "$One_ID" ${output_dir}chimeric_split2.tmp |cut -f 2|LANG=en_EN sort -u|wc -l)
 		   
 		   
 		   #if we have more than 1 chromosome for the assembly, it's chimeric
@@ -339,10 +339,10 @@ parseBam(){
 	cat ${output_dir}chimeric_split1.txt ${output_dir}chimeric_split2.txt >${output_dir}other_split.txt && rm ${output_dir}chimeric_split1.txt ${output_dir}chimeric_split2.txt
 	
 	#unique on the ID : keep preferentially IDs with the value T
-	sort -k 1,1 -k 2,2r ${output_dir}other_split.txt |sort -u -k 1,1 >${output_dir}other_split.tmp && mv ${output_dir}other_split.tmp ${output_dir}other_split.txt
+	LANG=en_EN sort -k 1,1 -k 2,2r ${output_dir}other_split.txt |LANG=en_EN sort -u -k 1,1 >${output_dir}other_split.tmp && mv ${output_dir}other_split.tmp ${output_dir}other_split.txt
 	
 	#reconstruct the modifed bed (12 classical bed columns + CIGAR + MD tag + NH tag + other_split + line number)
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${output_dir}modifiedBed12.tmp) <(LANG=en_EN sort -k1,1 ${output_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${output_dir}modifiedBed12.txt && rm ${output_dir}modifiedBed12.tmp && rm ${output_dir}other_split.txt
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN LANG=en_EN sort -k1,1 ${output_dir}modifiedBed12.tmp) <(LANG=en_EN LANG=en_EN sort -k1,1 ${output_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${output_dir}modifiedBed12.txt && rm ${output_dir}modifiedBed12.tmp && rm ${output_dir}other_split.txt
 
         mapper_name=$(grep "@PG" ${output_dir}sam_header.txt|cut -f 2|sed 's/ID://g')
 
@@ -369,7 +369,7 @@ parseBam(){
        
         find $output_dir -name "*_subfile.txt" |grep -E "[0-9]+_subfile.txt" |xargs -I {} -P $threads bash -c "parseModifiedBed {} "$mapper_name""
       
-        cat $(find $output_dir -name "*_subBed") |sort -k 1,1 -k 2,2n >$output_bed && find $output_dir -name "*_subBed" -type f -delete
+        cat $(find $output_dir -name "*_subBed") |LANG=en_EN sort -k 1,1 -k 2,2n >$output_bed && find $output_dir -name "*_subBed" -type f -delete
         cat $(find $output_dir -name "*_subTable") >$output_table && find $output_dir -name "*_subTable" -type f -delete
        
         find $output_dir -name "*_subfile.txt" -type f -delete
@@ -390,15 +390,13 @@ getFastaFromUnmappedTags(){
   
   
   #put tag ID before line in SAM, in a temp file (trick to conserve the line in SAM with the tag ID, in order to re-insert the result in the final table 
-  awk 'OFS="\t"{print $2,$1}' $unmapped_seq|LANG=en_EN sort -k1,1 >${unmapped_seq}.tmp
+  awk 'OFS="\t"{print $2,$1}' $unmapped_seq|LANG=en_EN LANG=en_EN sort -k1,1 >${unmapped_seq}.tmp
   
   #1st block : sort by tag ID unmapped tags
   #2nd block : sort by tag ID original fasta
   #3rd block : join both by tag ID
   #add the line in sam just after the tag ID (it will be used laparseModifiedBedter for the joining)
 
-  LANG=en_EN join -t $'\t' -11 -21 <(awk '{print ">"$2}' $unmapped_seq |LANG=en_EN sort -k1,1) <(LANG=en_EN sort -k1,1 $initial_fasta)|sed 's/>//g'| LANG=en_EN join -t $'\t' -11 -21 ${unmapped_seq}.tmp - |awk 'OFS="\t"{print ">"$1"-"$2,$3}'|sed 's/\t/\n/g' >$output_fasta
+  LANG=en_EN join -t $'\t' -11 -21 <(awk '{print ">"$2}' $unmapped_seq |LANG=en_EN LANG=en_EN sort -k1,1) <(LANG=en_EN LANG=en_EN sort -k1,1 $initial_fasta)|sed 's/>//g'| LANG=en_EN join -t $'\t' -11 -21 ${unmapped_seq}.tmp - |awk 'OFS="\t"{print ">"$1"-"$2,$3}'|sed 's/\t/\n/g' >$output_fasta
 
 }
-
-
