@@ -342,7 +342,7 @@ parseBam(){
 	LANG=en_EN sort -k 1,1 -k 2,2r ${output_dir}other_split.txt |LANG=en_EN sort -u -k 1,1 >${output_dir}other_split.tmp && mv ${output_dir}other_split.tmp ${output_dir}other_split.txt
 	
 	#reconstruct the modifed bed (12 classical bed columns + CIGAR + MD tag + NH tag + other_split + line number)
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN LANG=en_EN sort -k1,1 ${output_dir}modifiedBed12.tmp) <(LANG=en_EN LANG=en_EN sort -k1,1 ${output_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${output_dir}modifiedBed12.txt && rm ${output_dir}modifiedBed12.tmp && rm ${output_dir}other_split.txt
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${output_dir}modifiedBed12.tmp) <(LANG=en_EN sort -k1,1 ${output_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${output_dir}modifiedBed12.txt && rm ${output_dir}modifiedBed12.tmp && rm ${output_dir}other_split.txt
 
         mapper_name=$(grep "@PG" ${output_dir}sam_header.txt|cut -f 2|sed 's/ID://g')
 
@@ -390,13 +390,13 @@ getFastaFromUnmappedTags(){
   
   
   #put tag ID before line in SAM, in a temp file (trick to conserve the line in SAM with the tag ID, in order to re-insert the result in the final table 
-  awk 'OFS="\t"{print $2,$1}' $unmapped_seq|LANG=en_EN LANG=en_EN sort -k1,1 >${unmapped_seq}.tmp
+  awk 'OFS="\t"{print $2,$1}' $unmapped_seq|LANG=en_EN sort -k1,1 >${unmapped_seq}.tmp
   
   #1st block : sort by tag ID unmapped tags
   #2nd block : sort by tag ID original fasta
   #3rd block : join both by tag ID
   #add the line in sam just after the tag ID (it will be used laparseModifiedBedter for the joining)
 
-  LANG=en_EN join -t $'\t' -11 -21 <(awk '{print ">"$2}' $unmapped_seq |LANG=en_EN LANG=en_EN sort -k1,1) <(LANG=en_EN LANG=en_EN sort -k1,1 $initial_fasta)|sed 's/>//g'| LANG=en_EN join -t $'\t' -11 -21 ${unmapped_seq}.tmp - |awk 'OFS="\t"{print ">"$1"-"$2,$3}'|sed 's/\t/\n/g' >$output_fasta
+  LANG=en_EN join -t $'\t' -11 -21 <(awk '{print ">"$2}' $unmapped_seq |LANG=en_EN sort -k1,1) <(LANG=en_EN sort -k1,1 $initial_fasta)|sed 's/>//g'| LANG=en_EN join -t $'\t' -11 -21 ${unmapped_seq}.tmp - |awk 'OFS="\t"{print ">"$1"-"$2,$3}'|sed 's/\t/\n/g' >$output_fasta
 
 }
