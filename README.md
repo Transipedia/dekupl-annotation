@@ -6,34 +6,57 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 
 * bash (version >= 4.3.46)
 * awk (version >= 4.1.3)
-* R (version >= version 3.2.3) with libraries foreach & doParallel
+* R (version >= version 3.2.3) with libraries foreach, doParallel & DESeq2
 * bedtools (version >=2.24 ; preferentially 2.24)
 * Blast (version >= 2.5.0+)
 * GSNAP (version >= 2016-11-07)
+* samtools (version >= 1.3)
 
 Note: needs sufficient memory to index the genome (as much as gmap_build needs, a few tens of GB's).
 
 ## Usage : 
 
-    ./getContigsAnnotation.sh -a < `merged-diff-counts.tsv.gz (contigs from DEkupl)` > -g < `genome in fasta` > -d < `A_vs_B_DEGs.tsv (diff. genes from DEkupl)` > -r < `reference annotation (gff3 format)` > -t <stranded data (choose between "yes" or "no")> -o < `full path to output directory` > -i < `adapters in fasta` (you can use the file adapters.fa supplied with the program)> [options]
+Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
-      Options :
 
-                      -b        path to bin/ of blast scripts (default : in $PATH environment variable)
+ 	Required arguments :
 
-                      -c        path to bedtools, preferentially 2.24 (default : in $PATH environment variable)
+                  -a <`merged-diff-counts.tsv.gz` (contigs in "{A}_vs_{B}_kmer_counts" directory from Dekupl-run result)>
 
-                      -j        GSNAP index name
+                  -g <genome in fasta (uncompressed)>
 
-                      -k        path to directory of GSNAP index
+                  -d <`{A}vs{B}-DEGs.tsv` (diff. genes in "gene_expression" directory from Dekupl-run result)>
 
-                      -m        path to bin/ of GSNAP (default : in $PATH environment variable)
+                  -r <reference annotation (gff3 format, uncompressed)>
 
-                      -p        padj diff. gene threshold (default : 0.05)
+                  -t <are the reads stranded ? (choose between "yes" or "no")>
 
-                      -s        path to samtools (default : in $PATH environment variable)
+                  -e <`normalized_counts.tsv` (normalized gene counts in "gene_expression" directory from Dekupl-run result)>
 
-                      -n        thread number (default : 1)
+                  -f <`sample_conditions.tsv` (design file in "metadata" directory from Dekupl-run result)>
+
+                  -o <path to output directory>
+
+                  -i <illumina adapters (you can use the file "`adapters.fa`" supplied with the program)>
+
+
+	Optional arguments :
+
+                  -b <path to bin/ of blast scripts (default : in $PATH environment variable)>
+
+                  -c <path to bedtools, preferentially 2.24 (default : in $PATH environment variable)>
+
+                  -j <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
+
+                  -k <path to directory of GSNAP genome index (if the index of the genome has already been created, supply the directory. Otherwise, it is re-created by the program, and can be found atn "mapping_output/", inside your output directory)>
+
+                  -m <path to bin/ of GSNAP (default : in $PATH environment variable)>
+
+                  -p <padj diff. gene threshold (default : 0.05)>
+
+                  -s <path to samtools (default : in $PATH environment variable)>
+
+                  -n <thread number (default : 1)>
 
 ## Results :
 
