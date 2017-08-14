@@ -21,42 +21,42 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
  	Required arguments :
 
-                  -a <`merged-diff-counts.tsv.gz` (contigs in "{A}_vs_{B}_kmer_counts" directory from Dekupl-run result)>
+                  -a   <merged-diff-counts.tsv.gz (contigs in "{A}_vs_{B}_kmer_counts" directory from Dekupl-run result)>
 
-                  -g <genome in fasta (uncompressed)>
+                  -g   <genome in fasta (uncompressed)>
 
-                  -d <`{A}vs{B}-DEGs.tsv` (diff. genes in "gene_expression" directory from Dekupl-run result)>
+                  -d   <{A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)>
 
-                  -r <reference annotation (gff3 format, uncompressed)>
+                  -r   <reference annotation (gff3 format, uncompressed)>
 
-                  -t <are the reads stranded ? (choose between "yes" or "no")>
+                  -t   <are the reads stranded ? (choose between "yes" or "no")>
 
-                  -e <`normalized_counts.tsv` (normalized gene counts in "gene_expression" directory from Dekupl-run result)>
+                  -e   <normalized_counts.tsv (normalized gene counts in "gene_expression" directory from Dekupl-run result)>
 
-                  -f <`sample_conditions.tsv` (design file in "metadata" directory from Dekupl-run result)>
+                  -f   <sample_conditions.tsv (design file in "metadata" directory from Dekupl-run result)>
 
-                  -o <path to output directory>
+                  -o   <path to output directory>
 
-                  -i <illumina adapters (you can use the file "`adapters.fa`" supplied with the program)>
+                  -i   <illumina adapters (you can use the file "adapters.fa" supplied with the program)>
 
 
 	Optional arguments :
 
-                  -b <path to bin/ of blast scripts (default : in $PATH environment variable)>
+                  -b   <path to bin/ of blast scripts (default : in $PATH environment variable)>
 
-                  -c <path to bedtools, preferentially 2.24 (default : in $PATH environment variable)>
+                  -c   <path to bedtools, preferentially 2.24 (default : in $PATH environment variable)>
 
-                  -j <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
+                  -j   <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
 
-                  -k <path to directory of GSNAP genome index (if the index of the genome has already been created, supply the directory. Otherwise, it is re-created by the program, and can be found atn "mapping_output/", inside your output directory)>
+                  -k   <path to directory of GSNAP genome index (if the index of the genome has already been created, supply the directory. Otherwise, it is re-created by the program, and can be found atn "mapping_output/", inside your output directory)>
 
-                  -m <path to bin/ of GSNAP (default : in $PATH environment variable)>
+                  -m   <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
-                  -p <padj diff. gene threshold (default : 0.05)>
+                  -p   <padj diff. gene threshold (default : 0.05)>
 
-                  -s <path to samtools (default : in $PATH environment variable)>
+                  -s   <path to samtools (default : in $PATH environment variable)>
 
-                  -n <thread number (default : 1)>
+                  -n   <thread number (default : 1)>
 
 ## Results :
 
