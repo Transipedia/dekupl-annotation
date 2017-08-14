@@ -89,7 +89,7 @@ getDispersions<-function(my_object=""){
   
   if (class(dds)=="try-error"){
     
-    cat("with fitType='parametric', the dispersion trend was not well captured by the function, we will use instead fitType='local'")
+    cat("with fitType='parametric', the dispersion trend was not well captured by the function, we will use instead fitType='mean'")
     
     dds<-estimateDispersions(my_object,fitType="mean")
     
