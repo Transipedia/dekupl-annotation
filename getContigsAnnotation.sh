@@ -231,7 +231,7 @@ diff_contigs_bed="${output_dir}diff_contigs.bed"
 if [ -f $diff_contigs_bed ];then rm $diff_contigs_bed ;fi
 
 #processing of the gff
-grep -v "^#" $ref_annotation | sort -k1,1 -k4,4n >${output_dir}ref_annotation.tmp
+grep -v "^#" $ref_annotation | LANG=en_EN sort -k1,1 -k4,4n >${output_dir}ref_annotation.tmp
 
 ref_annotation=${output_dir}ref_annotation.tmp
 
@@ -259,7 +259,7 @@ bash $blast -q ${output_dir}OriginalFastaTags.fa -s $illumina_adapters -o $outpu
 #for checkings
 awk '!seen[$1]++' "${output_dir}raw_blast.alignment_2.txt" | sed $'s/ /\t/g' >${output_dir}match_in_adapters.txt
 
-grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g' | sort >${output_dir}originaltagIDs.txt
+grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g' | LANG=en_EN sort >${output_dir}originaltagIDs.txt
 
 comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -u) | awk 'OFS="\t"{print ">"$1}' | LANG=en_EN sort -k1,1 >${output_dir}nomatch_in_adapters.txt && rm ${output_dir}originaltagIDs.txt
 
@@ -317,7 +317,7 @@ start_date=$(date)
 #from the alignment, get a bed and a table of the contigs with infos about the alignment
 parseBam ${mapping_output}contigs.bam $FinalTable $diff_contigs_bed
 
-$samtools view -f 4 ${mapping_output}contigs.bam | sort -k1,1 | sort -u -k1,1 | awk -v start_line=$(($(wc -l $diff_contigs_bed | awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedTags.txt
+$samtools view -f 4 ${mapping_output}contigs.bam | LANG=en_EN sort -k1,1 | LANG=en_EN sort -u -k1,1 | awk -v start_line=$(($(wc -l $diff_contigs_bed | awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedTags.txt
 
 end_date=$(date)
 
@@ -345,7 +345,7 @@ start_date=$(date)
 
 	#if alignment length = tag length, it's a good case missed by the mapper, we make a unique on the tag ID !
 	#print tag ID,chr,start,end,strand,nb_mismatch,gaps , sort by mismaches, then gaps, then ID, then chromosome
-	awk 'OFS="\t"{if($4==$13){if($14=="plus"){$14="+"}else{$14="-"};print $1,$2,$9,$10,$14,$5,$6}}' ${output_dir}raw_blast.alignment_2.txt | sort -k6,6n -k7,7n -k1,1 -k2,2 | awk '!seen[$1]++'>${output_dir}UnmappedEntirelyFoundByBlast.txt
+	awk 'OFS="\t"{if($4==$13){if($14=="plus"){$14="+"}else{$14="-"};print $1,$2,$9,$10,$14,$5,$6}}' ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -k6,6n -k7,7n -k1,1 -k2,2 | awk '!seen[$1]++'>${output_dir}UnmappedEntirelyFoundByBlast.txt
 
 	awk 'OFS="\t"{if($4==$13){if($14=="plus"){$14="+"}else{$14="-"};print $1,$2,$9,$10,$14,$5,$6}}' ${output_dir}raw_blast.alignment_2.txt >${output_dir}UnmappedEntirelyFoundByBlast.tmp1
 
@@ -395,7 +395,7 @@ echo -e "\nend blast of unmapped contigs on genome : $end_date\n"
 
 fi
 
-sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
+LANG=en_EN sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
 ########## insert diffex infos in the bed file 
@@ -403,29 +403,29 @@ sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contig
 
 LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed | awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}' | sed 's/^ID=//g' | awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{printf $1"\t";printf "%.3e\t",$5;printf "%.0f\t",$6;printf "%.0f\t",$7;printf "%.2f\n",$8}' ${output_dir}diffexFile.txt|LANG=en_EN sort -k1,1) | awk 'OFS="\t"{$5=$5";pval="$14";meanA="$15";meanB="$16";log2FC="$17;print}' | cut -f2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
 
-sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
+LANG=en_EN sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
 ########## search max and min abs(log2FC) to scale the bed color (RGB) on them
 #########################################################################
 
 #max value for upregulated features
-max_up_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}'| awk '{if($1!~/-/){print}}' | sort -nr | head -n1)
+max_up_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}'| awk '{if($1!~/-/){print}}' | LANG=en_EN sort -nr | head -n1)
 
 #max value for downregulated features
-max_down_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}'| awk '{if($1~/-/){print}}' | sed 's/-//g'| sort -nr | head -n1)
+max_down_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}'| awk '{if($1~/-/){print}}' | sed 's/-//g'| LANG=en_EN sort -nr | head -n1)
 
 #max absolute value
-max_abs_log2FC=$(echo -e "${max_up_log2FC}\n${max_down_log2FC}"|sort -nr |head -n1)
+max_abs_log2FC=$(echo -e "${max_up_log2FC}\n${max_down_log2FC}"| LANG=en_EN sort -nr |head -n1)
 
 #min value for upregulated features
-min_up_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}' | awk '{if($1!~/-/){print}}' | sort -n | head -n1)
+min_up_log2FC=$(zcat $DEkupl_result | awk 'NR>1{if($7 >0 || $7 <0){print $7}}' | awk '{if($1!~/-/){print}}' | LANG=en_EN sort -n | head -n1)
 
 #min value for downregulated features
-min_down_log2FC=$(zcat $DEkupl_result |awk 'NR>1{if($7 >0 || $7 <0){print $7}}' | awk '{if($1~/-/){print}}' | sed 's/-//g'| sort -n | head -n1)
+min_down_log2FC=$(zcat $DEkupl_result |awk 'NR>1{if($7 >0 || $7 <0){print $7}}' | awk '{if($1~/-/){print}}' | sed 's/-//g'| LANG=en_EN sort -n | head -n1)
 
 #min absolute value
-min_abs_log2FC=$(echo -e "${min_up_log2FC}\n${min_down_log2FC}" | sort -n | head -n1)
+min_abs_log2FC=$(echo -e "${min_up_log2FC}\n${min_down_log2FC}" | LANG=en_EN sort -n | head -n1)
 
 #255,220,220 & 220,220,255 : light red and light blue
 #255,0,0 & 0,0,255 : far red and far blue
@@ -435,7 +435,7 @@ min_abs_log2FC=$(echo -e "${min_up_log2FC}\n${min_down_log2FC}" | sort -n | head
 #join bed and diffex table (just column lineInSam and log2FC) by lineInSAM
 LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed | awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}' | sed 's/^ID=//g' | awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{OFS="\t";print $1,$8}' ${output_dir}diffexFile.txt) | awk -v b=220 -v a=0 -v max=$max_abs_log2FC -v min=$min_abs_log2FC 'OFS="\t"{if($NF~/-/){abs_log2FC=-$14}else{abs_log2FC=$NF};RGB=220-((((b-a)*((0.5^(abs_log2FC))-(0.5^(min))))/((0.5^(max))-(0.5^(min))))+a);if($7=="+"){printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB};if($7=="-"){printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}}' | awk 'OFS="\t"{$10=$NF;print}' | cut -f 2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
 
-sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
+LANG=en_EN sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
 ########## research of antisense & neighbours + location of the tags in the gene (UTR, exon...) ###########
@@ -444,14 +444,14 @@ sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contig
 echo -e "\n==== research of the neighborhood of the contigs ====\n"
 
 #genome size for bedtools 
-$samtools view -H ${mapping_output}contigs.bam | grep -E -v "^@PG|^@HD" | awk 'OFS="\t"{print $2,$3}' | sed 's/SN\://;s/LN\://g' | sort -k1,1 >${mapping_output}genome_size.txt
+$samtools view -H ${mapping_output}contigs.bam | grep -E -v "^@PG|^@HD" | awk 'OFS="\t"{print $2,$3}' | sed 's/SN\://;s/LN\://g' | LANG=en_EN sort -k1,1 >${mapping_output}genome_size.txt
 
 start_date=$(date)
 
 #searching antisense tags, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
 if [ "$stranded" == "yes" ];then orientation_option="-s" ;dist_option="a";else orientation_option="";dist_option="ref"; fi
 
-awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}antisense_tags.txt
+awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}antisense_tags.txt
 
 
 if [ "$stranded" == "yes" ];then 
@@ -470,7 +470,7 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #searching sense tags (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n |sort -u -k4,4 >${output_dir}sense_tags.txt
+awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}sense_tags.txt
 
 #remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') \
@@ -480,7 +480,7 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #closest 5'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fu -D $dist_option -t first -a $diff_contigs_bed -b - | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}closest_5end.txt
+awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fu -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_5end.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_5end.txt | awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_5end.txt | awk -F';' '{print $1}' | awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_5end.txt | awk '{if($1=="."){$2="none"};print $2}') | awk 'OFS="\t"{if($3>0){$2="none";$3="none"}print}'>${output_dir}closest_5end.tmp && mv ${output_dir}closest_5end.tmp ${output_dir}closest_5end.txt
 
@@ -488,14 +488,14 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #closest 3'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fd -D $dist_option -t first -a $diff_contigs_bed -b - | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}closest_3end.txt
+awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fd -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_3end.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_3end.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_3end.txt | awk -F';' '{print $1}' | awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_3end.txt |awk '{if($1=="."){$2="none"};print $2}') | awk 'OFS="\t"{if($3<0){$2="none";$3="none"}print}'>${output_dir}closest_3end.tmp && mv ${output_dir}closest_3end.tmp ${output_dir}closest_3end.txt
 
 LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}closest_3end.txt
 
 #searching UTR tags (gives 1 col in addition of the lineInSAM : T or F)
-awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}UTR_tags.txt
+awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_tags.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_tags.tmp && mv ${output_dir}UTR_tags.tmp ${output_dir}UTR_tags.txt
 
@@ -503,7 +503,7 @@ LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_
 
 
 #searching exonic tags ( gives 1 col in addition of the line_in_SAM : T or F)
-awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | sort -k1,1 -k2,2n | sort -u -k4,4 >${output_dir}Exonic_tags.txt
+awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_tags.txt
 
 paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_tags.tmp && mv ${output_dir}Exonic_tags.tmp ${output_dir}Exonic_tags.txt
 
