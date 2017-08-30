@@ -103,8 +103,9 @@ dds<-getDispersions(dds)
 #binomiale negative test 
 dds<-nbinomWaldTest(dds)
 
-#results 
-DESeq2Result<-results(dds)
+#results
+#we turn off all kind of filters to avoid "NA" values for outliers
+DESeq2Result<-results(dds,independentFiltering=F,cooksCutoff=F)
 
 #extract padj 
 DESeq2Result<-DESeq2Result["padj"]
