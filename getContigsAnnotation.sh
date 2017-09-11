@@ -580,7 +580,7 @@ cat ${output_dir}header.txt $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.t
 cut -f 1-33,35- $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 sed 's/assembly/contig/g' $FinalTable >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
-echo -e ""\n==== Computing of the differential usage ====\n""
+echo -e "\n==== Computing of the differential usage ====\n"
 
 start_date=$(date)
 
