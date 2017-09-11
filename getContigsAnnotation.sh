@@ -15,7 +15,7 @@
                   -b <path to bin/ of blast scripts (default : in \$PATH environment variable)>\n
                   -c <path to bedtools, preferentially 2.24 (default : in \$PATH environment variable)>\n
                   -j <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name \"genome_index\")>\n
-                  -k <path to directory of GSNAP genome index (if the index of the genome has already been created, supply the directory. Otherwise, it is re-created by the program, and can be found at \"mapping_output/\", inside your output directory)>\n
+                  -k <path to directory of GSNAP genome index (if you have a former run, you can supply the path to the \"mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>\n
                   -m <path to bin/ of GSNAP (default : in \$PATH environment variable)>\n
                   -p <padj diff. gene threshold (default : 0.05)>\n
                   -s <path to samtools (default : in \$PATH environment variable)>\n
