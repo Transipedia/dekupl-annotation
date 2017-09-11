@@ -272,8 +272,12 @@ LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_d
 ##### mapping of the contigs
 ###############################
  
-#if no alignment file in BAM format for the contigs, build it 
-#if [ ! -f ${mapping_output}contigs.bam ];then
+#remove pre-existing mapping file 
+if [ -f ${mapping_output}contigs.bam ];then
+
+  rm ${mapping_output}contigs.bam
+  
+fi
 
 echo -e "\n==== Mapping of contigs on the genome ====\n"
 
@@ -304,8 +308,6 @@ end_date=$(date)
 
 echo -e "\nstart mapping of contigs : $start_date\n"
 echo -e "\nend mapping of contigs : $end_date\n"		  
-		  
-#fi
   
 ################## for each alignment line, reconstruction of the tag structure (splices, exons...)
 ###################################################################################################
