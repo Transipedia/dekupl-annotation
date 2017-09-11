@@ -48,7 +48,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -j   <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
 
-                  -k   <path to directory of GSNAP genome index (if the index of the genome has already been created, supply the directory. Otherwise, it is re-created by the program, and can be found atn "mapping_output/", inside your output directory)>
+                  -k   <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>
 
                   -m   <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
