@@ -7,7 +7,7 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 * bash (version >= 4.3.46)
 * awk (version >= 4.1.3)
 * R (version >= version 3.2.3) with libraries foreach, doParallel & DESeq2
-* bedtools (version >=2.24 ; preferentially 2.24)
+* bedtools (versions 2.24, 2.26 ; don't use version 2.25 !!)
 * Blast (version >= 2.5.0+)
 * GSNAP (version >= 2016-11-07)
 * samtools (version >= 1.3)
