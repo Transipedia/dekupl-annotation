@@ -452,10 +452,10 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 	start_date=$(date)
 
-	#searching antisense tags, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
+	#searching antisense gene, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
 	if [ "$stranded" == "yes" ];then orientation_option="-s" ;dist_option="a";else orientation_option="";dist_option="ref"; fi
 
-	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}antisense_tags.txt
+	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}antisense_tags.txt || { echo "searching of antisense gene failure (bedtools instersect -S )!!" 1>&2; exit; }
 
 
 	if [ "$stranded" == "yes" ];then 
@@ -476,8 +476,8 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}antisense_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable 
 
 
-	#searching sense tags (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}sense_tags.txt
+	#searching sense gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
+	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}sense_tags.txt || { echo "searching of sense gene failure (bedtools instersect -s )!!" 1>&2; exit; }
 
 	#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') \
@@ -487,7 +487,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 
 	#closest 5'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fu -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_5end.txt
+	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fu -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_5end.txt || { echo "searching of closest 5' gene failure (bedtools closest -io -fu )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_5end.txt | awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_5end.txt | awk -F';' '{print $1}' | awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_5end.txt | awk '{if($1=="."){$2="none"};print $2}') | awk 'OFS="\t"{if($3>0){$2="none";$3="none"}print}'>${output_dir}closest_5end.tmp && mv ${output_dir}closest_5end.tmp ${output_dir}closest_5end.txt
 
@@ -495,14 +495,14 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 
 	#closest 3'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
-	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fd -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_3end.txt
+	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools closest -nonamecheck -g ${mapping_output}genome_size.txt $orientation_option -io -fd -D $dist_option -t first -a $diff_contigs_bed -b - | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}closest_3end.txt || { echo "searching of closest 3' gene failure (bedtools closest -io -fd )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}closest_3end.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1)}' ${output_dir}closest_3end.txt | awk -F';' '{print $1}' | awk '{if($1=="."){$1="none"};sub("ID=","",$1);print}') <(awk 'OFS="\t"{print $(NF-1),$NF}' ${output_dir}closest_3end.txt |awk '{if($1=="."){$2="none"};print $2}') | awk 'OFS="\t"{if($3<0){$2="none";$3="none"}print}'>${output_dir}closest_3end.tmp && mv ${output_dir}closest_3end.tmp ${output_dir}closest_3end.txt
 
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}closest_3end.txt
 
 	#searching UTR tags (gives 1 col in addition of the lineInSAM : T or F)
-	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_tags.txt
+	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_tags.txt || { echo "searching of contigs in UTRs failure (bedtools intesect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_tags.tmp && mv ${output_dir}UTR_tags.tmp ${output_dir}UTR_tags.txt
 
@@ -510,7 +510,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 
 	#searching exonic tags ( gives 1 col in addition of the line_in_SAM : T or F)
-	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_tags.txt
+	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_tags.txt || { echo "searching of contigs in exons failure (bedtools intesect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_tags.tmp && mv ${output_dir}Exonic_tags.tmp ${output_dir}Exonic_tags.txt
 
