@@ -166,12 +166,15 @@ chmod 755 $getContigsPerLoci
 getSwitches=$(dirname "$0")/getSwitches.R
 chmod 755 $getSwitches
 
+getIntronsByTranscripts=$(dirname "$0")/getIntronsByTranscripts.R
+chmod 755 $getIntronsByTranscripts
+
 blast=$(dirname "$0")/blast.sh
 chmod 755 $blast
 
 chmod 755 $(dirname "$0")/getAnnotationFunctions.sh
 source $(dirname "$0")/getAnnotationFunctions.sh
- 
+
 ##### check whether programs are supplied/installed
 #we look for samtools, bedtools, blast directory, and gsnap directory
 #####################################################################
@@ -230,40 +233,40 @@ if [ -f $FinalTable ];then rm $FinalTable ;fi
 diff_contigs_bed="${output_dir}diff_contigs.bed"
 if [ -f $diff_contigs_bed ];then rm $diff_contigs_bed ;fi
 
-#processing of the gff
-grep -v "^#" $ref_annotation | LANG=en_EN sort -k1,1 -k4,4n >${output_dir}ref_annotation.tmp
+#processing of the gff : construct the feature "intron" + sort
+LANG=en_EN sort -k1,1 -k4,4n <(grep -v "^#" $ref_annotation) <($getIntronsByTranscripts $ref_annotation)>${output_dir}ref_annotation.tmp
 
 ref_annotation=${output_dir}ref_annotation.tmp
 
 zcat $DEkupl_result | awk 'NR==1{OFS="\t";print "ID",$0;exit}' >${output_dir}diffexFileHeader.txt
 
 #convert the DEkupl contigs output in fasta, and at the same time put the tag of reference as an ID for joinings
-zcat $DEkupl_result | awk 'NR>1{print}' | awk 'OFS="\t"{print $3,$0}' | tee ${output_dir}diffexFile.txt | awk 'OFS="\n"{print ">"$1,$3}' >${output_dir}OriginalFastaTags.fa 
+zcat $DEkupl_result | awk 'NR>1{print}' | awk 'OFS="\t"{print $3,$0}' | tee ${output_dir}diffexFile.txt | awk 'OFS="\n"{print ">"$1,$3}' >${output_dir}OriginalFastaContigs.fa 
 
 #col 1 =ID ; col 2 = contig seq : will be used in joinings
-cat ${output_dir}OriginalFastaTags.fa | paste - - | awk 'OFS="\t"{print $1,$2}' | LANG=en_EN sort -k1,1 >${output_dir}OriginalFastaTags.tmp
+cat ${output_dir}OriginalFastaContigs.fa | paste - - | awk 'OFS="\t"{print $1,$2}' | LANG=en_EN sort -k1,1 >${output_dir}OriginalFastaContigs.tmp
 
 cat ${output_dir}diffexFileHeader.txt ${output_dir}diffexFile.txt >${output_dir}diffexFile.tmp && mv ${output_dir}diffexFile.tmp ${output_dir}diffexFile.txt && rm ${output_dir}diffexFileHeader.txt
 
 
-##### blast of tags against adapters, and retain only those not matching
+##### blast of contigs against adapters, and retain only those not matching
 ########################################################################
 
 echo -e "\n==== Filter out contigs matching in adapters ====\n"
 
 echo -e "  blast on adapters !\n"
 
-bash $blast -q ${output_dir}OriginalFastaTags.fa -s $illumina_adapters -o $output_dir -p $ncbi_blast_loc -d "illumina_adapters" -n $threads || { echo "blast on adapters failure!!" 1>&2; exit; }
+bash $blast -q ${output_dir}OriginalFastaContigs.fa -s $illumina_adapters -o $output_dir -p $ncbi_blast_loc -d "illumina_adapters" -n $threads || { echo "blast on adapters failure!!" 1>&2; exit; }
 
 #for checkings
 awk '!seen[$1]++' "${output_dir}raw_blast.alignment_2.txt" | sed $'s/ /\t/g' >${output_dir}match_in_adapters.txt
 
-grep "^>" ${output_dir}OriginalFastaTags.fa | sed 's/>//g' | LANG=en_EN sort >${output_dir}originaltagIDs.txt
+grep "^>" ${output_dir}OriginalFastaContigs.fa | sed 's/>//g' | LANG=en_EN sort >${output_dir}originaltagIDs.txt
 
 comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.alignment_2.txt | LANG=en_EN sort -u) | awk 'OFS="\t"{print ">"$1}' | LANG=en_EN sort -k1,1 >${output_dir}nomatch_in_adapters.txt && rm ${output_dir}originaltagIDs.txt
 
-#reconstruction of the fasta with only tags not matching in adapters
-LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaTags.tmp | sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
+#reconstruction of the fasta with only contigs not matching in adapters
+LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaContigs.tmp | sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
 
 
 ##### mapping of the contigs
@@ -316,7 +319,7 @@ start_date=$(date)
 #from the alignment, get a bed and a table of the contigs with infos about the alignment
 parseBam ${mapping_output}contigs.bam $FinalTable $diff_contigs_bed
 
-$samtools view -f 4 ${mapping_output}contigs.bam | LANG=en_EN sort -k1,1 | LANG=en_EN sort -u -k1,1 | awk -v start_line=$(($(wc -l $diff_contigs_bed | awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedTags.txt
+$samtools view -f 4 ${mapping_output}contigs.bam | LANG=en_EN sort -k1,1 | LANG=en_EN sort -u -k1,1 | awk -v start_line=$(($(wc -l $diff_contigs_bed | awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedContigs.txt
 
 end_date=$(date)
 
@@ -327,18 +330,18 @@ echo -e "\nend parse BAM : $end_date\n"
 ############## blast of unmapped seq and add the good ones (full length alignment) in the final table/bed
 #########################################################################################################
 
-if [ -f ${output_dir}OriginalUnmappedTags.txt ];then
+if [ -f ${output_dir}OriginalUnmappedContigs.txt ];then
 
 start_date=$(date)
 
 
  #if there are unmapped contigs, we'll try to align them with blast (actually we are looking for those with full length)
- if [[ $(wc -l ${output_dir}OriginalUnmappedTags.txt|awk '{print $1}') -gt 0 ]];then
+ if [[ $(wc -l ${output_dir}OriginalUnmappedContigs.txt|awk '{print $1}') -gt 0 ]];then
 
 	echo -e "\n==== blast of unmapped contigs : retrieving those mapping with their full length ====\n"
 
         #this function will rebuild a fasta file from the unmapped contigs
-	getFastaFromUnmappedTags ${output_dir}OriginalUnmappedTags.txt ${output_dir}OriginalFastaTags.tmp ${output_dir}unmapped_fasta1.fa 
+	getFastaFromUnmappedContigs ${output_dir}OriginalUnmappedContigs.txt ${output_dir}OriginalFastaContigs.tmp ${output_dir}unmapped_fasta1.fa 
 
 	bash $blast -q ${output_dir}unmapped_fasta1.fa -s $ref_fasta -o $output_dir -p $ncbi_blast_loc -d "human_genome" -n $threads
 
@@ -375,12 +378,12 @@ start_date=$(date)
 	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
 
           #contigs still unmapped after the previous method
-	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedTags.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedTags.txt) >${output_dir}unmapped_tags_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
+	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedContigs.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedContigs.txt) >${output_dir}unmapped_contigs_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
 	
 	else
 
           #if the previous method didn't give results, just re-use the initial unmapped contigs
-          cat ${output_dir}OriginalUnmappedTags.txt >${output_dir}unmapped_tags_2.txt
+          cat ${output_dir}OriginalUnmappedContigs.txt >${output_dir}unmapped_contigs_2.txt
 
         fi
 
@@ -442,7 +445,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	LANG=en_EN sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
 
-	########## research of antisense & neighbours + location of the tags in the gene (UTR, exon...) ###########
+	########## research of antisense & neighbours + location of the contigs in the gene (UTR, exon...) ###########
 	###########################################################################################################
 
 	echo -e "\n==== research of the neighborhood of the contigs ====\n"
@@ -455,35 +458,35 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	#searching antisense gene, retain only one target (sort by chr and start, then unique on attribute of the tag) (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
 	if [ "$stranded" == "yes" ];then orientation_option="-s" ;dist_option="a";else orientation_option="";dist_option="ref"; fi
 
-	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}antisense_tags.txt || { echo "searching of antisense gene failure (bedtools instersect -S )!!" 1>&2; exit; }
+	awk '{if($3=="gene"){print}}' $ref_annotation| $bedtools intersect -S -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}antisense_contigs.txt || { echo "searching of antisense gene failure (bedtools instersect -S )!!" 1>&2; exit; }
 
 
 	if [ "$stranded" == "yes" ];then 
 
 		#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
-		paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') \
-		<(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
+		paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_contigs.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') \
+		<(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_contigs.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}antisense_contigs.tmp && mv ${output_dir}antisense_contigs.tmp ${output_dir}antisense_contigs.txt
 
 	else
 
-		paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_tags.txt | awk -F';' 'OFS="\t"{print "none","none"}') >${output_dir}antisense_tags.tmp && mv ${output_dir}antisense_tags.tmp ${output_dir}antisense_tags.txt
+		paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}antisense_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}antisense_contigs.txt | awk -F';' 'OFS="\t"{print "none","none"}') >${output_dir}antisense_contigs.tmp && mv ${output_dir}antisense_contigs.tmp ${output_dir}antisense_contigs.txt
 
 	fi
 
 	#normally, if the bed file isn't empty, you shouldn't have an empty file (because it's a "left outer join") ; if it's the case, probably there's no concordance between the genome & the annotation !
-	if [[ $(wc -l ${output_dir}antisense_tags.txt|awk '{print $1}') -eq 0 ]];then echo -e "\ncheck if your genome & annotation files have concordant chromosomes !\n";exit;fi
+	if [[ $(wc -l ${output_dir}antisense_contigs.txt|awk '{print $1}') -eq 0 ]];then echo -e "\ncheck if your genome & annotation files have concordant chromosomes !\n";exit;fi
 
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}antisense_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable 
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}antisense_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable 
 
 
 	#searching sense gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & HUGO ID)
-	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}sense_tags.txt || { echo "searching of sense gene failure (bedtools instersect -s )!!" 1>&2; exit; }
+	awk '{if($3=="gene"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}sense_contigs.txt || { echo "searching of sense gene failure (bedtools instersect -s )!!" 1>&2; exit; }
 
 	#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
-	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_tags.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') \
-	<(awk 'OFS="\t"{print $NF}' ${output_dir}sense_tags.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}sense_tags.tmp && mv ${output_dir}sense_tags.tmp ${output_dir}sense_tags.txt
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}sense_contigs.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') \
+	<(awk 'OFS="\t"{print $NF}' ${output_dir}sense_contigs.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${output_dir}sense_contigs.tmp && mv ${output_dir}sense_contigs.tmp ${output_dir}sense_contigs.txt
 
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}sense_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}sense_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
 
 	#closest 5'end gene (gives 2 cols in addition of the lineInSAM : Ensembl gene ID & dist)
@@ -501,40 +504,42 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}closest_3end.txt
 
-	#searching UTR tags (gives 1 col in addition of the lineInSAM : T or F)
-	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_tags.txt || { echo "searching of contigs in UTRs failure (bedtools intesect )!!" 1>&2; exit; }
+	#searching UTR contigs (gives 1 col in addition of the lineInSAM : T or F)
+	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_contigs.txt || { echo "searching of contigs in UTRs failure (bedtools intesect )!!" 1>&2; exit; }
 
-	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_tags.tmp && mv ${output_dir}UTR_tags.tmp ${output_dir}UTR_tags.txt
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_contigs.tmp && mv ${output_dir}UTR_contigs.tmp ${output_dir}UTR_contigs.txt
 
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}UTR_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable 
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}UTR_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable 
 
 
-	#searching exonic tags ( gives 1 col in addition of the line_in_SAM : T or F)
-	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_tags.txt || { echo "searching of contigs in exons failure (bedtools intesect )!!" 1>&2; exit; }
+	#searching exonic contigs ( gives 1 col in addition of the line_in_SAM : T or F)
+	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_contigs.txt || { echo "searching of contigs in exons failure (bedtools intesect )!!" 1>&2; exit; }
 
-	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_tags.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_tags.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_tags.tmp && mv ${output_dir}Exonic_tags.tmp ${output_dir}Exonic_tags.txt
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_contigs.tmp && mv ${output_dir}Exonic_contigs.tmp ${output_dir}Exonic_contigs.txt
 
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}Exonic_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}Exonic_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
+	
+	
+	#searching intronic contigs ( gives 1 col in addition of the line_in_SAM : T or F)
+	awk '{if($3=="intron"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Intronic_contigs.txt || { echo "searching of contigs in introns failure (bedtools intesect )!!" 1>&2; exit; }
 
-	#searching intronic tags (it gives 1 col in addition of the line_in_SAM : T or F)
-	#join genic contigs, exonic contigs, and UTR contigs by line_in_SAM ; so we have 4 columns
-	#if the tag isn't genic, it cannot be intronic (intronic=F). In the case it is genic : if it's exonic or UTR, it cannot be intronic either(intronic=F). If it's not in the previous groups, it's intronic (intronic=T)
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${output_dir}sense_tags.txt) <(LANG=en_EN sort -k1,1 ${output_dir}Exonic_tags.txt) |LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}UTR_tags.txt) | awk 'OFS="\t"{if($2=="none"){print $1,"F"}else{if($3=="T" || $4=="T"){print $1,"F"}else{print $1,"T"}}}'>${output_dir}Intronic_tags.txt
+	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Intronic_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Intronic_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Intronic_contigs.tmp && mv ${output_dir}Intronic_contigs.tmp ${output_dir}Intronic_contigs.txt
 
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}Intronic_tags.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}sense_tags.txt && rm ${output_dir}antisense_tags.txt && rm ${output_dir}Intronic_tags.txt && rm ${output_dir}Exonic_tags.txt && rm ${output_dir}UTR_tags.txt
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}Intronic_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
+
 
 	#diff gene (gives 1 col)
 	awk -v padj_threshold=$padj_threshold 'NR>1{if($7!="NA" && $7<=padj_threshold){print $1}}' $diff_genes >${output_dir}diff_genes_ID.txt
 
 	# ! sensitive column ! : in final table we have to search sense gene (actually it's col 22); this give cols lineInSam & sense gene
-	awk 'NR>1{OFS="\t";if($22!="none"){print $1,$22}}' $FinalTable >${output_dir}genes_with_tags.txt
+	awk 'NR>1{OFS="\t";if($22!="none"){print $1,$22}}' $FinalTable >${output_dir}genes_with_contigs.txt
 
 	#join genes with contigs and diff_genes_ID by gene ID, and keep the lineInSam as first col ; this give cols lineInSam & gene_is_diff
-	LANG=en_EN join -t $'\t' -a1 -e'F' -12 -21 -o 1.1,2.1 <(LANG=en_EN sort -k2,2 ${output_dir}genes_with_tags.txt) <(LANG=en_EN sort -k2,2 ${output_dir}diff_genes_ID.txt) | awk 'OFS="\t"{if($2!="F"){$2="T"};print}' >${output_dir}diff_genes_with_tags.txt && rm ${output_dir}genes_with_tags.txt ${output_dir}diff_genes_ID.txt
+	LANG=en_EN join -t $'\t' -a1 -e'F' -12 -21 -o 1.1,2.1 <(LANG=en_EN sort -k2,2 ${output_dir}genes_with_contigs.txt) <(LANG=en_EN sort -k2,2 ${output_dir}diff_genes_ID.txt) | awk 'OFS="\t"{if($2!="F"){$2="T"};print}' >${output_dir}diff_genes_with_contigs.txt && rm ${output_dir}genes_with_contigs.txt ${output_dir}diff_genes_ID.txt
 
 	#join the final table with diff_genes_ID
 	#! sensitive column ! : in final table we have to search gene_is_diff (actually it's col 31)
-	LANG=en_EN join -t $'\t' -a1 -e'F' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}diff_genes_with_tags.txt) | awk 'OFS="\t"{if($31==""){$31="F"}print}' >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}diff_genes_with_tags.txt
+	LANG=en_EN join -t $'\t' -a1 -e'F' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}diff_genes_with_contigs.txt) | awk 'OFS="\t"{if($31==""){$31="F"}print}' >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}diff_genes_with_contigs.txt
 
 	end_date=$(date)
 
@@ -546,9 +551,9 @@ fi
 #add the appropriates NAs (in addition of the existing lineInSam and tag ID column) in the final table for the unmatched contigs
 #2 (LineInSam + ID) +29 NAs = 31 columns
 
-if [ -f ${output_dir}unmapped_tags_2.txt ];then
+if [ -f ${output_dir}unmapped_contigs_2.txt ];then
 
-	if [[ $(wc -l ${output_dir}unmapped_tags_2.txt |awk '{print $1}') -gt 0 ]];then
+	if [[ $(wc -l ${output_dir}unmapped_contigs_2.txt |awk '{print $1}') -gt 0 ]];then
 
 		while read line ;do 
 
@@ -561,7 +566,7 @@ if [ -f ${output_dir}unmapped_tags_2.txt ];then
 		 #line contain line in sam and ID
 		 echo -e "${line}\t${empty}" >>$FinalTable
 		   
-		done < ${output_dir}unmapped_tags_2.txt
+		done < ${output_dir}unmapped_contigs_2.txt
 	
 	fi
 
@@ -618,4 +623,4 @@ if [ "$stranded" == "yes" ];then
 
 fi
 
-rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaTags.tmp
+rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaContigs.tmp ${output_dir}sense_contigs.txt ${output_dir}antisense_contigs.txt ${output_dir}Intronic_contigs.txt ${output_dir}Exonic_contigs.txt ${output_dir}UTR_contigs.txt
