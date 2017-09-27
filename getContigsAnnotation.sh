@@ -505,7 +505,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${output_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${output_dir}closest_3end.txt
 
 	#searching UTR contigs (gives 1 col in addition of the lineInSAM : T or F)
-	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_contigs.txt || { echo "searching of contigs in UTRs failure (bedtools intesect )!!" 1>&2; exit; }
+	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}UTR_contigs.txt || { echo "searching of contigs in UTRs failure (bedtools intersect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}UTR_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}UTR_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}UTR_contigs.tmp && mv ${output_dir}UTR_contigs.tmp ${output_dir}UTR_contigs.txt
 
@@ -513,7 +513,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 
 	#searching exonic contigs ( gives 1 col in addition of the line_in_SAM : T or F)
-	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_contigs.txt || { echo "searching of contigs in exons failure (bedtools intesect )!!" 1>&2; exit; }
+	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Exonic_contigs.txt || { echo "searching of contigs in exons failure (bedtools intersect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Exonic_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Exonic_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Exonic_contigs.tmp && mv ${output_dir}Exonic_contigs.tmp ${output_dir}Exonic_contigs.txt
 
@@ -521,7 +521,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	
 	
 	#searching intronic contigs ( gives 1 col in addition of the line_in_SAM : T or F)
-	awk '{if($3=="intron"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Intronic_contigs.txt || { echo "searching of contigs in introns failure (bedtools intesect )!!" 1>&2; exit; }
+	awk '{if($3=="intron"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${output_dir}Intronic_contigs.txt || { echo "searching of contigs in introns failure (bedtools intersect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${output_dir}Intronic_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${output_dir}Intronic_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${output_dir}Intronic_contigs.tmp && mv ${output_dir}Intronic_contigs.tmp ${output_dir}Intronic_contigs.txt
 
