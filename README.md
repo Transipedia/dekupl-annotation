@@ -6,8 +6,8 @@ DE-kupl annotation is part of the DE-kupl package, and performs annotations of D
 
 * bash (version >= 4.3.46)
 * awk (version >= 4.1.3)
-* R (version >= version 3.2.3) with libraries foreach, doParallel & DESeq2
-* bedtools (version >=2.24 ; preferentially 2.24)
+* R (version >= version 3.2.3) with libraries foreach, doParallel, GenomicFeatures & DESeq2
+* bedtools (versions 2.24, 2.26 ; don't use version 2.25 !!)
 * Blast (version >= 2.5.0+)
 * GSNAP (version >= 2016-11-07)
 * samtools (version >= 1.3)
@@ -23,11 +23,11 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -a   <merged-diff-counts.tsv.gz (contigs in "{A}_vs_{B}_kmer_counts" directory from Dekupl-run result)>
 
-                  -g   <genome in fasta (uncompressed)>
+                  -g   <genome in fasta (uncompressed). Use the same version as the annotation to avoid chromosome name issues>
 
                   -d   <{A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)>
 
-                  -r   <reference annotation (gff3 format, uncompressed)>
+                  -r   <reference annotation (gff3 format, uncompressed). Use the same version as the genome file to avoid chromosome name issues>
 
                   -t   <are the reads stranded ? (choose between "yes" or "no")>
 
@@ -58,6 +58,11 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -n   <thread number (default : 1)>
 
+## Warnings :
+
+- After the downloading of `dekupl-annotation`, make `chmod 755 *.{sh,R}` into the directory to avoid rights issues.
+- Use the same genome & annotation files version as the one of the file `transcripts.fa` used by Kallisto in Dekupl-run (e.g by default it's gencode 24, if it has changed, you should take this into account here, to avoid incoherences in the results because of non-maching IDs).
+
 ## Results :
 
 - Table `DiffContigsInfos.tsv`, summarizing for each assembly, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations
@@ -84,6 +89,5 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
  	
 ## Miscellaneous :
 
-- After the downloading of `dekupl-annotation`, make `chmod 755 *.{sh,R}` in the directory to avoid rights issues
 - If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
 - The Blast of unmapped contigs on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many, and run blast on each sub-file (with xargs) to speed up.

@@ -108,16 +108,18 @@ dds<-nbinomWaldTest(dds)
 DESeq2Result<-results(dds,independentFiltering=F,cooksCutoff=F)
 
 #extract padj 
-DESeq2Result<-DESeq2Result["padj"]
+DESeq2Result<-DESeq2Result[c("padj","stat")]
 
 #make a custom table with contig ID,mean cond1, mean cond2, log2FC, padj, normalized counts for all libraries
-new_result<-data.frame(id=row.names(DESeq2Result),DU_Pvalue=DESeq2Result$padj,row.names=NULL)
+new_result<-data.frame(id=row.names(DESeq2Result),DU_Pvalue=DESeq2Result$padj,DU_stat=DESeq2Result$stat,row.names=NULL)
 
 #merge the initial table of contigs with the result
 all_contigs<-merge(all_contigs,new_result, by.x="ID", by.y="id", all.x=T, all.y=F)
 
 #unmapped/intergenic contigs are given the value "NA"
 all_contigs$DU_Pvalue[is.na(all_contigs$DU_Pvalue)]<-"NA"
+
+all_contigs$DU_stat[all_contigs$DU_Pvalue=="NA"]<-"NA"
 
 write.table(all_contigs,file=paste(home,"DiffContigsInfos.tsv",sep=""),sep="\t",row.names=F, col.names=T, quote=F)
 
