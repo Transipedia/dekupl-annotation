@@ -21,11 +21,11 @@ sample_conditions<-args[3]
 #normalized counts (gene expression) from dekupl (Kallisto)
 normalizedGeneCounts<-args[4]
 
-all_contigs<-read.delim(all_contigs)
+all_contigs<-read.delim(all_contigs,check.names=F)
 
-sample_conditions<-read.delim(sample_conditions)
+sample_conditions<-read.delim(sample_conditions,check.names=F)
 
-normalizedGeneCounts<-read.delim(normalizedGeneCounts)
+normalizedGeneCounts<-read.delim(normalizedGeneCounts,check.names=F)
 
 #### process data ####
 
