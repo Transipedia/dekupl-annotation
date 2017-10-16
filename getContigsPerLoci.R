@@ -47,7 +47,7 @@ clusterContigs<-function(initial_table="",
                          nb_merged_kmers="nb_merged_kmers",
                          nb_cores=1){
                                                 
-  initial_table<-read.delim(initial_table,sep="\t",header=T)
+  initial_table<-read.delim(initial_table,check.names=F)
   
   mappedContigs<-initial_table[which(initial_table[is_mapped]==T),]
   
