@@ -121,5 +121,8 @@ all_contigs$DU_Pvalue[is.na(all_contigs$DU_Pvalue)]<-"NA"
 
 all_contigs$DU_stat[all_contigs$DU_Pvalue=="NA"]<-"NA"
 
+#put column DU_Pvalue & DU_stat just after initial log2FC (before the counts)
+all_contigs<-all_contigs[,c(1:37,(ncol(all_contigs))-1,ncol(all_contigs),38:((ncol(all_contigs))-2))]
+
 write.table(all_contigs,file=paste(home,"DiffContigsInfos.tsv",sep=""),sep="\t",row.names=F, col.names=T, quote=F)
 
