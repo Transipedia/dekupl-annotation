@@ -102,6 +102,6 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
  	
 ## Miscellaneous :
 
-- If Blast data bases for the human genome and the adapters are already created, this step in the script blast.sh will be avoided.
+- If Blast data bases for the human genome and the adapters are already created, these steps will be avoided (by the script blast.sh).
 
-- The Blast of unmapped contigs on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many, and run blast on each sub-file (with xargs) to speed up.
+- The Blast of unmapped contigs on the genome (after the mapping with GSNAP) can take long time even though it is parallelized ; in script blast.sh, you can split the input file in many chuncks, and run blast on each sub-file (with xargs) to speed up.
