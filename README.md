@@ -29,7 +29,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -r   <reference annotation (gff3 format, uncompressed). Use the same version as the genome file to avoid chromosome name issues>
 
-                  -t   <are the reads stranded ? (choose between "yes" or "no")>
+                  -t   <are the reads stranded ? (choose "yes" or "no")>
 
                   -e   <normalized_counts.tsv (normalized gene counts in "gene_expression" directory from Dekupl-run result)>
 
