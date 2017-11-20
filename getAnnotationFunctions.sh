@@ -43,7 +43,7 @@ parseModifiedBed(){
 	   
 	   strand=$(echo "$line"|cut -f 6)
 	   
-	   if [ "$strand" == "+" ];then color="255,0,0" ; else color="0,0,255" ;fi
+	   if [ "$strand" == "+" ];then color=$forward_contig_color ; else color=$reverse_contig_color ;fi
 	   
 	   other_split=$(echo "$line"|cut -f 16)
 	  
@@ -247,12 +247,19 @@ parseModifiedBed(){
 #1st argument : bam file
 #2nd argument : output table
 #3rd argument : output bed 
-
+#4th argument color of contigs on forward strand
+#5th argument color of contigs on reverse strand
 parseBam(){
       
         bam_file=$1
-        output_table=${2}
-        output_bed=${3}
+        
+        output_table=$2
+        
+        output_bed=$3
+        
+        forward_contig_color=$4
+        
+        reverse_contig_color=$5
      
         if [ -f $output_table ];then rm $output_table ; fi
         if [ -f $output_bed ];then rm $output_bed ; fi
@@ -341,7 +348,7 @@ parseBam(){
 	#unique on the ID : keep preferentially IDs with the value T
 	LANG=en_EN sort -k 1,1 -k 2,2r ${output_dir}other_split.txt |LANG=en_EN sort -u -k 1,1 >${output_dir}other_split.tmp && mv ${output_dir}other_split.tmp ${output_dir}other_split.txt
 	
-	#reconstruct the modifed bed (12 classical bed columns + CIGAR + MD tag + NH tag + other_split + line number)
+	#reconstruct the modified bed (12 classical bed columns + CIGAR + MD tag + NH tag + other_split + line number)
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${output_dir}modifiedBed12.tmp) <(LANG=en_EN sort -k1,1 ${output_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${output_dir}modifiedBed12.txt && rm ${output_dir}modifiedBed12.tmp && rm ${output_dir}other_split.txt
 
         mapper_name=$(grep "@PG" ${output_dir}sam_header.txt|cut -f 2|sed 's/ID://g')
