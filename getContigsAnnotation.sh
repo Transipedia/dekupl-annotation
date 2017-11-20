@@ -18,6 +18,7 @@ usage() { echo -e "Usage: $0 <Required arguments> [Optional arguments]\n\n
                   -k <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>\n
                   -m <path to bin/ of GSNAP (default : in \$PATH environment variable)>\n
                   -p <padj diff. gene threshold (default : 0.05)>\n
+                  -q <contig color (choose 1 or 2 ; default : 1) > \n\n\t\t\t1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n\t\t\t2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n
                   -s <path to samtools (default : in \$PATH environment variable)>\n
                   -n <thread number (default : 1)>\n\n
 \tResults :\n
@@ -28,7 +29,7 @@ usage() { echo -e "Usage: $0 <Required arguments> [Optional arguments]\n\n
 
 [[ $# -eq 0 ]] && usage
 
-while getopts ":a:g:d:r:i:o:b:c:j:k:m:p:s:t:n:e:f:" opt; do
+while getopts ":a:g:d:r:i:o:b:c:j:k:m:p:s:t:n:e:f:q:" opt; do
   case $opt in
   
       a)
@@ -143,7 +144,13 @@ while getopts ":a:g:d:r:i:o:b:c:j:k:m:p:s:t:n:e:f:" opt; do
       
             design=$OPTARG
 
-            ;;          
+            ;;
+            
+      q)
+      
+            contig_color=$OPTARG
+          
+            ;;                        
       
       #invalid options (options not in the list)
       ######################
@@ -212,6 +219,27 @@ echo -e "threads number is : $threads\n"
 
 if [ "$padj_threshold" == "" ];then padj_threshold=0.05;fi
 
+#set contig color
+if [ "$contig_color" != "1" ] && [ "$contig_color" != "2" ];then contig_color=1;fi
+
+if [ "$contig_color" == "1" ];then
+
+  echo -e "\ncontig color : 1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n" >&2
+  
+  forward_contig_color="255,0,0"
+  
+  reverse_contig_color="0,0,255"
+ 
+elif [ "$contig_color" == "2" ];then
+
+  echo -e "\n2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n"
+  
+  forward_contig_color="0,0,255"
+  
+  reverse_contig_color="255,0,0"
+
+fi
+
 
 ##### processing of the input variables
 ########################################
@@ -240,7 +268,7 @@ ref_annotation=${output_dir}ref_annotation.tmp
 
 zcat $DEkupl_result | awk 'NR==1{OFS="\t";print "ID",$0;exit}' >${output_dir}diffexFileHeader.txt
 
-#convert the DEkupl contigs output in fasta, and at the same time put the tag of reference as an ID for joinings
+#convert the DEkupl contigs output to fasta, and at the same time put the tag of reference as an ID for joinings
 zcat $DEkupl_result | awk 'NR>1{print}' | awk 'OFS="\t"{print $3,$0}' | tee ${output_dir}diffexFile.txt | awk 'OFS="\n"{print ">"$1,$3}' >${output_dir}OriginalFastaContigs.fa 
 
 #col 1 =ID ; col 2 = contig seq : will be used in joinings
@@ -317,7 +345,7 @@ echo -e "\n==== Reconstruction of the tag structure (splices, exons...) from the
 start_date=$(date)
 
 #from the alignment, get a bed and a table of the contigs with infos about the alignment
-parseBam ${mapping_output}contigs.bam $FinalTable $diff_contigs_bed
+parseBam ${mapping_output}contigs.bam $FinalTable $diff_contigs_bed $forward_contig_color $reverse_contig_color
 
 $samtools view -f 4 ${mapping_output}contigs.bam | LANG=en_EN sort -k1,1 | LANG=en_EN sort -u -k1,1 | awk -v start_line=$(($(wc -l $diff_contigs_bed | awk '{print $1}')+1)) 'BEGIN{a=start_line}OFS="\t"{print a,$1;a=a+1}' >${output_dir}OriginalUnmappedContigs.txt
 
@@ -375,7 +403,7 @@ start_date=$(date)
 	if [ -f ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 ];then
 
 	  #put the result in the bed file 
-	  awk 'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,"255,0,0",1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,"0,0,255",1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
+	  awk -v forward_contig_color=$forward_contig_color -v reverse_contig_color=$reverse_contig_color'OFS="\t"{if($7>$6){$6=$6-1;print $5,$6,$7,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$6,$7,forward_contig_color,1,$7-$6,0}else{$7=$7-1;print $5,$7,$6,"LineInSam="$1";ID="$2";nb_hit="$13";nM="$14";del="$15";ins=0;clipped_5p=0;clipped_3p=0",1,$12,$7,$6,reverse_contig_color,1,$6-$7,0}}' ${output_dir}UnmappedEntirelyFoundByBlast.tmp2 >>$diff_contigs_bed
 
           #contigs still unmapped after the previous method
 	  comm -23 <(cut -f 1 ${output_dir}OriginalUnmappedContigs.txt | LANG=en_EN sort) <(cut -f 1 ${output_dir}UnmappedEntirelyFoundByBlast.tmp2|LANG=en_EN sort ) | LANG=en_EN join -t $'\t' -11 -21 - <(LANG=en_EN sort -k1,1 ${output_dir}OriginalUnmappedContigs.txt) >${output_dir}unmapped_contigs_2.txt && rm ${output_dir}UnmappedEntirelyFoundByBlast.tmp2
@@ -439,8 +467,9 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	#we will scale the color following the abs(log2FC)
 	#formula to range [min,max] to [a,b] :[((b-a)(x - min))/ (max - min)] +a
 
-	#join bed and diffex table (just column lineInSam and log2FC) by lineInSAM
-	LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed | awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}' | sed 's/^ID=//g' | awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{OFS="\t";print $1,$8}' ${output_dir}diffexFile.txt) | awk -v b=220 -v a=0 -v max=$max_abs_log2FC -v min=$min_abs_log2FC 'OFS="\t"{if($NF~/-/){abs_log2FC=-$14}else{abs_log2FC=$NF};RGB=220-((((b-a)*((0.5^(abs_log2FC))-(0.5^(min))))/((0.5^(max))-(0.5^(min))))+a);if($7=="+"){printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB};if($7=="-"){printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}}' | awk 'OFS="\t"{$10=$NF;print}' | cut -f 2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
+	#join bed and diffex table (just column ID and log2FC) by ID, then scale the color of each line on the abs(log2FC)
+	LANG=en_EN join -t $'\t' -11 -21 <(awk 'OFS="\t"{initial_line=$0;ID_col=$4;print ID_col,initial_line}' $diff_contigs_bed | awk 'OFS="\t"{split ($1,x,";");a=x[2]; print a,$0}' | sed 's/^ID=//g' | awk 'OFS="\t"{$2="";print $0}'|LANG=en_EN sort -k1,1) <(awk 'NR>1{OFS="\t";print $1,$8}' ${output_dir}diffexFile.txt) | \
+	 awk -v contig_color=$contig_color -v b=220 -v a=0 -v max=$max_abs_log2FC -v min=$min_abs_log2FC 'OFS="\t"{if($NF~/-/){abs_log2FC=-$14}else{abs_log2FC=$NF};RGB=220-((((b-a)*((0.5^(abs_log2FC))-(0.5^(min))))/((0.5^(max))-(0.5^(min))))+a);if($7=="+"){if(contig_color==1){printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB}else{printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}};if($7=="-"){if(contig_color==1){printf $0"\t";printf "%.0f",RGB;printf ",";printf "%.0f",RGB;printf ",255\n"}else{printf $0"\t";printf "255,";printf "%.0f",RGB;printf ",";printf "%.0f\n",RGB}}}' | awk 'OFS="\t"{$10=$NF;print}' | cut -f 2-13 >${diff_contigs_bed}.tmp1 && mv ${diff_contigs_bed}.tmp1 ${diff_contigs_bed}
 
 	LANG=en_EN sort -k1,1 -k2,2n $diff_contigs_bed >${diff_contigs_bed}.tmp && mv ${diff_contigs_bed}.tmp $diff_contigs_bed
 
