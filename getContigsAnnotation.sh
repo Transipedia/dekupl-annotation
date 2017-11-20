@@ -1,12 +1,12 @@
 #!/bin/bash
 
- usage() { echo -e "Usage: $0 <Required arguments> [Optional arguments]\n\n
+usage() { echo -e "Usage: $0 <Required arguments> [Optional arguments]\n\n
  \tRequired arguments :\n
                   -a <merged-diff-counts.tsv.gz (contigs in \"{A}_vs_{B}_kmer_counts\" directory from Dekupl-run result)>\n
                   -g <genome in fasta (uncompressed). Use the same version as the annotation to avoid chromosome name issues>\n
                   -d <{A}vs{B}-DEGs.tsv (diff. genes in \"gene_expression\" directory from Dekupl-run result)>\n
                   -r <reference annotation (gff3 format, uncompressed). Use the same version as the genome file to avoid chromosome name issues>\n
-                  -t <are the reads stranded ? (choose between \"yes\" or \"no\")>\n
+                  -t <are the reads stranded ? (choose \"yes\" or \"no\")>\n
                   -e <normalized_counts.tsv (normalized gene counts in \"gene_expression\" directory from Dekupl-run result)>\n
                   -f <sample_conditions.tsv (design file in \"metadata\" directory from Dekupl-run result)>\n
                   -o <path to output directory>\n
