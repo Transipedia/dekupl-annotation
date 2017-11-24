@@ -98,7 +98,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
 8. The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
 
-9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic, unmapped) is built (`DiffContigsInfos.tsv`).                  
+9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic, unmapped) is built (`ContigsPerLoci.tsv`).                  
  	
 ## Miscellaneous :
 
