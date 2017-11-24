@@ -244,15 +244,22 @@ fi
 ##### processing of the input variables
 ########################################
 
+#output dir
 output_dir="${output_dir}/"
-
 output_dir=$(echo "$output_dir" | sed 's/\/\//\//g')
-
 if [ ! -d $output_dir ];then mkdir $output_dir ;fi
 
 mapping_output="${output_dir}mapping_output/"
-
 if [ ! -d $mapping_output ];then mkdir $mapping_output ;fi
+
+#temp dir (use to store temp files after the annotation, for checkings)
+temp_dir="${output_dir}/temp_files/"
+if [ -d $temp_dir ];then
+
+   rm -rf $temp_dir
+   
+fi
+mkdir $temp_dir
 
 #final tab file
 FinalTable="${output_dir}DiffContigsInfos.tsv"
@@ -682,14 +689,14 @@ fi
 #delete some temp files
 rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaContigs.tmp ${output_dir}sense_contigs.txt ${output_dir}antisense_contigs.txt ${output_dir}Intronic_contigs.txt ${output_dir}Exonic_contigs.txt ${output_dir}UTR_contigs.txt
 
-#move useful temp files (for checkings) in a temp directory
+#move useful temp files/directories in a temp directory (for checkings)
 cd $output_dir
-
-temp_dir="${output_dir}/temp_files/"
 
 temp_files=$(ls |grep -E -v "DiffContigsInfos.tsv|ContigsPerLoci.tsv|diff_contigs.bed")
 
 mv $temp_files $temp_dir
+
+mv $mapping_output $temp_dir
 
 echo -e "\n**** Annotation done ****\n"
 
