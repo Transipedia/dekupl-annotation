@@ -54,7 +54,9 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -p   <padj diff. gene threshold (default : 0.05)>
 		  
-                  -q <contig color (choose 1 or 2 ; default : 1) > \n\n\t\t\t1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n\t\t\t2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n
+                  -q <contig color (choose 1 or 2 ; default : 1) > 
+		        1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
+			2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
 		  
                   -s   <path to samtools (default : in $PATH environment variable)>
 
