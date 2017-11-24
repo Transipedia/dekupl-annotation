@@ -224,7 +224,7 @@ if [ "$contig_color" != "1" ] && [ "$contig_color" != "2" ];then contig_color=1;
 
 if [ "$contig_color" == "1" ];then
 
-  echo -e "\ncontig color : 1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n" >&2
+  echo -e "\ncontig color is set to 1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n" >&2
   
   forward_contig_color="255,0,0"
   
@@ -232,7 +232,7 @@ if [ "$contig_color" == "1" ];then
  
 elif [ "$contig_color" == "2" ];then
 
-  echo -e "\n2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n"
+  echo -e "\ncontig color is set to 2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n"
   
   forward_contig_color="0,0,255"
   
@@ -282,7 +282,9 @@ cat ${output_dir}diffexFileHeader.txt ${output_dir}diffexFile.txt >${output_dir}
 
 echo -e "\n==== Filter out contigs matching in adapters ====\n"
 
-echo -e "  blast on adapters !\n"
+echo -e "\nnumber of initial contigs $(($(wc -l ${output_dir}OriginalFastaContigs.fa|awk '{print $1}')/2))\n"
+
+start_date=$(date) 
 
 bash $blast -q ${output_dir}OriginalFastaContigs.fa -s $illumina_adapters -o $output_dir -p $ncbi_blast_loc -d "illumina_adapters" -n $threads || { echo "blast on adapters failure!!" 1>&2; exit; }
 
@@ -295,6 +297,20 @@ comm -23 ${output_dir}originaltagIDs.txt <(cut -f 1 ${output_dir}raw_blast.align
 
 #reconstruction of the fasta with only contigs not matching in adapters
 LANG=en_EN join -t $'\t' -11 -21 ${output_dir}nomatch_in_adapters.txt ${output_dir}OriginalFastaContigs.tmp | sed 's/\t/\n/g' >${output_dir}nomatch_in_adapters.tmp && rm ${output_dir}nomatch_in_adapters.txt && mv ${output_dir}nomatch_in_adapters.tmp ${output_dir}nomatch_in_adapters.fa
+
+end_date=$(date)
+
+echo -e "\nstart blast of contigs on adapters : $start_date\n"
+echo -e "\nend blast of contigs on adapters : $end_date\n"
+
+#check if there are contigs to map
+if [[ $(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}') -eq 0 ]];then
+
+  echo -e "\nno contigs to map on the supplied genome, check your inputs !\n"
+  
+  exit
+  
+fi
 
 
 ##### mapping of the contigs
@@ -309,7 +325,7 @@ fi
 
 echo -e "\n==== Mapping of contigs on the genome ====\n"
 
-echo -e "number of contigs to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
+echo -e "\nnumber of contigs to align : $(($(wc -l ${output_dir}nomatch_in_adapters.fa|awk '{print $1}')/2))\n"
 
 start_date=$(date)
 
@@ -333,10 +349,20 @@ ${GSNAP_loc}gsnap -t $threads -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_na
 
 end_date=$(date)
 
+#check if there are no problems with the output bam file
+if [[ $($samtools view ${mapping_output}contigs.bam |wc -l |awk '{print $1}') -eq 0 ]];then
+
+  echo -e "\nno results for the mapping, check the supplied index directory !\n"
+  
+  exit
+
+
+fi
+
 echo -e "\nstart mapping of contigs : $start_date\n"
-echo -e "\nend mapping of contigs : $end_date\n"		  
-  
-  
+echo -e "\nend mapping of contigs : $end_date\n"
+
+
 ################## for each alignment line, reconstruction of the tag structure (splices, exons...)
 ###################################################################################################
 
@@ -358,6 +384,7 @@ echo -e "\nend parse BAM : $end_date\n"
 ############## blast of unmapped seq and add the good ones (full length alignment) in the final table/bed
 #########################################################################################################
 
+#if there are unmapped contigs, try to align them on the supplied genome with another tool (blast here)
 if [ -f ${output_dir}OriginalUnmappedContigs.txt ];then
 
 start_date=$(date)
@@ -635,8 +662,8 @@ echo -e "\nstart computing of differential usage : $start_date\n"
 echo -e "\nend computing of differential usage : $end_date\n"
 
 
-############## Clustering of the contigs by loci (genic/antisense/intergenic)
-#############################################################################
+############## Clustering of the contigs by loci (genic/antisense/intergenic/unmapped)
+######################################################################################
 
 if [ "$stranded" == "yes" ];then
        
@@ -652,4 +679,17 @@ if [ "$stranded" == "yes" ];then
 
 fi
 
+#delete some temp files
 rm ${output_dir}ref_annotation.tmp ${output_dir}OriginalFastaContigs.tmp ${output_dir}sense_contigs.txt ${output_dir}antisense_contigs.txt ${output_dir}Intronic_contigs.txt ${output_dir}Exonic_contigs.txt ${output_dir}UTR_contigs.txt
+
+#move useful temp files (for checkings) in a temp directory
+cd $output_dir
+
+temp_dir="${output_dir}/temp_files/"
+
+temp_files=$(ls |grep -E -v "DiffContigsInfos.tsv|ContigsPerLoci.tsv|diff_contigs.bed")
+
+mv $temp_files $temp_dir
+
+echo -e "\n**** Annotation done ****\n"
+
