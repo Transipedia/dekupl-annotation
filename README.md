@@ -48,12 +48,14 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -j   <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
 
-                  -k   <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>
+                  -k   <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"temp_dir/mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>
 
                   -m   <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
                   -p   <padj diff. gene threshold (default : 0.05)>
-
+		  
+                  -q <contig color (choose 1 or 2 ; default : 1) > \n\n\t\t\t1 : contigs on forward strand are in red (contigs on reverse strand are in blue)\n\t\t\t2 : contigs on forward strand are in blue (contigs on reverse strand are in red)\n
+		  
                   -s   <path to samtools (default : in $PATH environment variable)>
 
                   -n   <thread number (default : 1)>
