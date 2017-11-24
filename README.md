@@ -74,7 +74,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
           
 ## Description of the outputs :
 
-1. **`DiffContigsInfos.tsv`** : summary of all supplied contigs, no matter that they are aligned or not. The file `contigs_ontology.xlsx` supplied gives the ontology used. The column "TERM" in this xlsx file gives all the columns added by the annotation in the summarizing table.
+1. **`DiffContigsInfos.tsv`** : summary of all supplied contigs, no matter that they are aligned or not. The file `contigs_ontology.ods` supplied the used ontology. The column "TERM" in this last file, gives all the columns added by the annotation in the summarizing table `DiffContigsInfos.tsv`.
 
 2. **`diff_contigs.bed`** : BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -), with intensity scaled on the abs(log2FC).
 
