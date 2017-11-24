@@ -13,6 +13,10 @@ parseModifiedBed(){
         
         mapper_name=$2
         
+        forward_contig_color=$3
+        
+        reverse_contig_color=$4
+        
         file_name=$(basename $modifiedBed)
         
         output_dir="$(dirname $modifiedBed)/"
@@ -374,7 +378,7 @@ parseBam(){
        
         export -f parseModifiedBed
        
-        find $output_dir -name "*_subfile.txt" |grep -E "[0-9]+_subfile.txt" |xargs -I {} -P $threads bash -c "parseModifiedBed {} "$mapper_name""
+        find $output_dir -name "*_subfile.txt" |grep -E "[0-9]+_subfile.txt" |xargs -I {} -P $threads bash -c "parseModifiedBed {} "$mapper_name" "$forward_contig_color" "$reverse_contig_color""
       
         cat $(find $output_dir -name "*_subBed") |LANG=en_EN sort -k 1,1 -k 2,2n >$output_bed && find $output_dir -name "*_subBed" -type f -delete
         cat $(find $output_dir -name "*_subTable") >$output_table && find $output_dir -name "*_subTable" -type f -delete
