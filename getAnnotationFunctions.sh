@@ -283,7 +283,7 @@ parseBam(){
         $samtools view -H $bam_file >${temp_dir}sam_header.txt
         
         #we convert primary alignment in col ID+bed12, and we keep the longer seq for each ID (useful if we have chimeric alignments).
-        #remark : we cannot have the extra SAM tags in the bed12 file, so we store the samtools result before the conversion
+        #remark : we cannot have the extra SAM tags in the bed12 file, so we store the samtools result before the conversion in ${temp_dir}TAGS.tmp
         #in the last pipe, we remove /1 or /2 that could be added by bedtools for read1 or read2
 	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|tee ${temp_dir}TAGS.tmp |cat ${temp_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' |awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' >${temp_dir}primary_aligment.txt
 
