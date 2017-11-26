@@ -262,6 +262,8 @@ parseBam(){
         if [ -d $temp_dir ];then 
         
            rm -rf $temp_dir
+	   
+	   mkdir $temp_dir
            
         else
         
