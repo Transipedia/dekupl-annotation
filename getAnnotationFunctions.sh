@@ -293,7 +293,7 @@ parseBam(){
 	#join col ID+bed12 with the CIGAR, NH tag, & MD tag (no need to sort)
 	LANG=en_EN join -t $'\t' -11 -21 ${temp_dir}primary_aligment.txt ${temp_dir}TAGS.txt >${temp_dir}modifiedBed12.tmp
 	
-	#looking for chimeric alignment with the flag
+	#looking for chimeric alignments with the flag
 	$samtools view -F 4 -F 0x100 -f 0x800 $bam_file >${temp_dir}chimeric_split1.tmp 
 	
 	#if there's no such flag, keep the ID, and put in the second column False for all the contigs 
