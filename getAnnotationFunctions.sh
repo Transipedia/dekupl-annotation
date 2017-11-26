@@ -50,8 +50,8 @@ parseModifiedBed(){
 	   if [ "$strand" == "+" ];then color=$forward_contig_color ; else color=$reverse_contig_color ;fi
 	   
 	   other_split=$(echo "$line"|cut -f 16)
-	  
-	   nb_mismatch=$(echo "$line"|cut -f 14 |sed 's/MD\:Z\://g'|grep -o -E "[A-Z]"|wc -l)
+	   
+	   nb_mismatch=$(echo "$line"|cut -f 14)
 	   
 	   nb_hit=$(echo "$line" |cut -f 15)
 	   
@@ -257,7 +257,17 @@ parseBam(){
       
         bam_file=$1
         
-        temp_dir="$(dirname $bam_file)/bam_file_processing"
+        temp_dir="$(dirname $bam_file)/bam_file_processing/"
+        
+        if [ -d $temp_dir ];then 
+        
+           rm -rf $temp_dir
+           
+        else
+        
+          mkdir $temp_dir
+        
+        fi
         
         output_table=$2
         
@@ -272,24 +282,16 @@ parseBam(){
         
         $samtools view -H $bam_file >${temp_dir}sam_header.txt
         
-        #convert primary alignment in col ID+bed12 , and we keep the longer seq for each ID (useful if we have chimeric alignments)
-	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|cat ${temp_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' >${temp_dir}primary_aligment.txt
-	
-	#remove /1 or /2 that could be added by bedtools for read1 or read2
-	awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' ${temp_dir}primary_aligment.txt >${temp_dir}primary_aligment.tmp && mv ${temp_dir}primary_aligment.tmp ${temp_dir}primary_aligment.txt
+        #we convert primary alignment in col ID+bed12, and we keep the longer seq for each ID (useful if we have chimeric alignments).
+        #remark : we cannot have the extra SAM tags in the bed12 file, so we store the samtools result before the conversion
+        #in the last pipe, we remove /1 or /2 that could be added by bedtools for read1 or read2
+	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|tee ${temp_dir}TAGS.tmp |cat ${temp_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' |awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' >${temp_dir}primary_aligment.txt
 
-        #get the CIGAR
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|cut -f 6 >${temp_dir}CIGAR.txt
-
-        #get the MD tag
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3 |grep -o "MD\:Z:.*\s"|cut -f 1 >${temp_dir}MD_tag.txt
-
-        #get the NH tag
-	$samtools view -F 4 -F 0x100 $bam_file|awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|grep -o -E "NH\:i\:[0-9]+"|sed 's/NH\:i\://g' >${temp_dir}NH_tag.txt
+        #get col ID, CIGAR, MD & NH tags (if these last tags are missing, the value "NA" is given)
+        awk -F '\t' '{OFS="\t";ID=$1;CIGAR=$6;MD="";NH="";for(i=12;i<=NF;i++){if($i~/^MD\:Z\:.*/){gsub(/MD\:Z\:/,"",$i);if($i~/[0-9]/ || $i~/[A-Z]/){gsub(/[0-9]/,"",$i);gsub(/\^/,"",$i);if($i==""){$i=0}else{$i=length($i)}};MD=$i};if($i~/NH\:i\:[0-9]+/){gsub(/NH\:i\:/,"",$i);NH=$i}};if(MD==""){MD="NA"};if(NH==""){NH="NA"};print ID,CIGAR,MD,NH}' ${temp_dir}TAGS.tmp >${temp_dir}TAGS.txt && rm ${temp_dir}TAGS.tmp 
 	
-	
-	#paste col ID+bed12 with the CIGAR, NH tag, & MD tag (no need to use join, we have used the same samtools commands)
-	paste ${temp_dir}primary_aligment.txt ${temp_dir}CIGAR.txt ${temp_dir}MD_tag.txt ${temp_dir}NH_tag.txt >${temp_dir}modifiedBed12.tmp
+	#join col ID+bed12 with the CIGAR, NH tag, & MD tag (no need to sort)
+	LANG=en_EN join -t $'\t' -11 -21 ${temp_dir}primary_aligment.txt ${temp_dir}TAGS.txt >${temp_dir}modifiedBed12.tmp
 	
 	#looking for chimeric alignment with the flag
 	$samtools view -F 4 -F 0x100 -f 0x800 $bam_file >${temp_dir}chimeric_split1.tmp 
@@ -297,12 +299,12 @@ parseBam(){
 	#if there's no such flag, keep the ID, and put in the second column False for all the contigs 
 	if [[ $(wc -l ${temp_dir}chimeric_split1.tmp|awk '{print $1}' ) -eq 0 ]];then 
 	
-	   awk 'OFS="\t"{print $1,"F"}' ${temp_dir}primary_aligment.txt >${temp_dir}chimeric_split1.txt
+	   awk 'OFS="\t"{print $1,"F"}' ${temp_dir}primary_aligment.txt >${temp_dir}chimeric_split1.txt && rm ${temp_dir}chimeric_split1.tmp
 	   
 	#otherwise, keep the ID, and put in the second column True   
 	else
 	
-	   awk 'OFS="\t"{print $1,T}' ${temp_dir}chimeric_split1.tmp >${temp_dir}chimeric_split1.txt
+	   awk 'OFS="\t"{print $1,T}' ${temp_dir}chimeric_split1.tmp >${temp_dir}chimeric_split1.txt && rm ${temp_dir}chimeric_split1.tmp
 	
 	fi
 
@@ -372,7 +374,8 @@ parseBam(){
         #removing pre-existing input sub-files 
         find $temp_dir -name "*_subfile.txt" -type f -delete
        
-        awk -v split_lines=$split_lines -v temp_dir=$temp_dir 'NR%split_lines==1{OFS="\t";x=++i"_subfile.txt"}{OFS="";print > temp_dir x}' ${temp_dir}modifiedBed12.txt && rm ${temp_dir}modifiedBed12.txt
+        #split the modified bed in many chunks, then run the function parseModifiedBed() on them
+        awk -v split_lines=$split_lines -v temp_dir=$temp_dir 'NR%split_lines==1{OFS="\t";x=++i"_subfile.txt"}{OFS="";print > temp_dir x}' ${temp_dir}modifiedBed12.txt
        
         #removing pre-existing sub-results
         find $temp_dir -name "*_subBed" -type f -delete
