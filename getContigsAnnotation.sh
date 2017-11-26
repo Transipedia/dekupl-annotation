@@ -247,7 +247,7 @@ fi
 #output dir
 output_dir="${output_dir}/"
 output_dir=$(echo "$output_dir" | sed 's/\/\//\//g')
-if [ ! -d $output_dir ];then mkdir $output_dir ;fi
+if [ ! -d $output_dir ];then mkdir $output_dir || { echo "cannot create $output_dir !!" 1>&2; exit; } ;fi
 
 #temp dir (use to store temp files after the annotation, for checkings)
 temp_dir="${output_dir}/temp_files/"
@@ -352,7 +352,7 @@ fi
 gsnap_index_dir="${gsnap_index_dir}/"
 gsnap_index_dir=$(echo "$gsnap_index_dir" |sed 's/\/\//\//g')
 
-${GSNAP_loc}gsnap -t $threads -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name ${temp_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}contigs.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
+${GSNAP_loc}gsnap -t $threads -A sam -N 1 -D $gsnap_index_dir -d $gsnap_index_name -w 50000 ${temp_dir}nomatch_in_adapters.fa |$samtools view -bh >${mapping_output}contigs.bam || { echo "gsnap mapping failure!!" 1>&2; exit; }
 
 end_date=$(date)
 
@@ -661,7 +661,7 @@ echo -e "\n==== Computing of the differential usage ====\n"
 
 start_date=$(date)
 
-$getSwitches $temp_dir $FinalTable $design $normalized_gene_counts || { echo "getSwitches.R script failure !" 1>&2; exit; }
+$getSwitches $output_dir $FinalTable $design $normalized_gene_counts || { echo "getSwitches.R script failure !" 1>&2; exit; }
 
 end_date=$(date)
 
@@ -678,7 +678,7 @@ if [ "$stranded" == "yes" ];then
 	
 	#cluster contigs per loci
 	start_date=$(date)	
-	$getContigsPerLoci $temp_dir $FinalTable $threads || { echo "getContigsPerLoci.R script failure !" 1>&2; exit; }
+	$getContigsPerLoci $output_dir $FinalTable $threads || { echo "getContigsPerLoci.R script failure !" 1>&2; exit; }
 	end_date=$(date)
 
 	echo -e "\nstart clustering of contigs : $start_date\n"
