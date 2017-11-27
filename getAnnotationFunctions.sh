@@ -19,12 +19,12 @@ parseModifiedBed(){
         
         file_name=$(basename $modifiedBed)
         
-        temp_dir="$(dirname $modifiedBed)/"
+        bam_processing_dir="$(dirname $modifiedBed)/"
         
         file_number=$(echo ${file_name//_/ }|awk '{print $1}')
         
-        if [ -f ${temp_dir}${file_number}_subTable ];then rm ${temp_dir}${file_number}_subTable ;fi
-        if [ -f ${temp_dir}${file_number}_subBed ];then rm ${temp_dir}${file_number}_subBed ;fi
+        if [ -f ${bam_processing_dir}${file_number}_subTable ];then rm ${bam_processing_dir}${file_number}_subTable ;fi
+        if [ -f ${bam_processing_dir}${file_number}_subBed ];then rm ${bam_processing_dir}${file_number}_subBed ;fi
     
 
         j=1
@@ -228,10 +228,10 @@ parseModifiedBed(){
 	   split_exons_RelStart=$(echo ${split_exons_RelStart[*]}|sed 's/ /,/g')
 	   
 	   #we add +1 at the start for the final table because it was in bed format (0-based)
-	   echo -e "${LineInSam}\t${ID}\tT\t${mapper_name}\t${chromosome}\t$((${start}+1))\t${end}\t${junction_coord}\t${nb_junction}\t${exon_coord_list}\t$other_split\t${strand}\t${nb_hit}\t${nb_mismatch}\t${nb_deletion}\t${nb_insertion}\t$SNV\t${nb_5SoftClipped}\t${nb_3SoftClipped}" >>${temp_dir}${file_number}_subTable
+	   echo -e "${LineInSam}\t${ID}\tT\t${mapper_name}\t${chromosome}\t$((${start}+1))\t${end}\t${junction_coord}\t${nb_junction}\t${exon_coord_list}\t$other_split\t${strand}\t${nb_hit}\t${nb_mismatch}\t${nb_deletion}\t${nb_insertion}\t$SNV\t${nb_5SoftClipped}\t${nb_3SoftClipped}" >>${bam_processing_dir}${file_number}_subTable
 	   
 	   
-	   echo -e "${chromosome}\t${start}\t${end}\tLineInSam=${LineInSam};ID=${ID};nb_hit=${nb_hit};nM=${nb_mismatch};del=${nb_deletion};ins=${nb_insertion};clipped_5p=${nb_5SoftClipped};clipped_3p=${nb_3SoftClipped}\t1\t${strand}\t${start}\t${end}\t${color}\t$((${nb_junction}+1))\t${split_exons_length}\t${split_exons_RelStart}" >>${temp_dir}${file_number}_subBed
+	   echo -e "${chromosome}\t${start}\t${end}\tLineInSam=${LineInSam};ID=${ID};nb_hit=${nb_hit};nM=${nb_mismatch};del=${nb_deletion};ins=${nb_insertion};clipped_5p=${nb_5SoftClipped};clipped_3p=${nb_3SoftClipped}\t1\t${strand}\t${start}\t${end}\t${color}\t$((${nb_junction}+1))\t${split_exons_length}\t${split_exons_RelStart}" >>${bam_processing_dir}${file_number}_subBed
 	   
 	   #echo -e "${chromosome}\t${start}\t${end}\tLineInSam=${LineInSam};ID=${ID};nb_hit=${nb_hit};nM=${nb_mismatch};del=${nb_deletion};ins=${nb_insertion};clipped_5p=${nb_5SoftClipped};clipped_3p=${nb_3SoftClipped}\t1\t${strand}\t${start}\t${end}\t${color}\t$((${nb_junction}+1))\t${split_exons_length}\t${split_exons_RelStart}"
 	   
@@ -257,17 +257,17 @@ parseBam(){
       
         bam_file=$1
         
-        temp_dir="$(dirname $bam_file)/bam_file_processing/"
+        bam_processing_dir="$(dirname $bam_file)/bam_file_processing/"
         
-        if [ -d $temp_dir ];then 
+        if [ -d $bam_processing_dir ];then 
         
-           rm -rf $temp_dir
+           rm -rf $bam_processing_dir
 	   
-	   mkdir $temp_dir
+	   mkdir $bam_processing_dir
            
         else
         
-          mkdir $temp_dir
+          mkdir $bam_processing_dir
         
         fi
         
@@ -282,31 +282,31 @@ parseBam(){
         if [ -f $output_table ];then rm $output_table ; fi
         if [ -f $output_bed ];then rm $output_bed ; fi
         
-        $samtools view -H $bam_file >${temp_dir}sam_header.txt
+        $samtools view -H $bam_file >${bam_processing_dir}sam_header.txt
         
         #we convert primary alignment in col ID+bed12, and we keep the longer seq for each ID (useful if we have chimeric alignments).
-        #remark : we cannot have the extra SAM tags in the bed12 file, so we store the samtools result before the conversion in ${temp_dir}TAGS.tmp
+        #remark : we cannot have the extra SAM tags in the bed12 file, so we store the samtools result before the conversion in ${bam_processing_dir}TAGS.tmp
         #in the last pipe, we remove /1 or /2 that could be added by bedtools for read1 or read2
-	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|tee ${temp_dir}TAGS.tmp |cat ${temp_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' |awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' >${temp_dir}primary_aligment.txt
+	$samtools view -F 4 -F 0x100 $bam_file |awk 'OFS="\t"{$(NF+1)=length($10);print}' |LANG=en_EN sort -k 1,1 -k10,10nr|LANG=en_EN sort -u -k 1,1|awk 'OFS="\t"{$NF="";print}' |LANG=en_EN sort -k1,1 -k3,3|tee ${bam_processing_dir}TAGS.tmp |cat ${bam_processing_dir}sam_header.txt - |$samtools view -bh|$bedtools bamtobed -bed12 -i stdin|awk 'OFS="\t"{print $4,$0}' |awk 'OFS="\t"{gsub(/\/2$/,"",$1);gsub(/\/1$/,"",$1);gsub(/\/2$/,"",$5);gsub(/\/1$/,"",$5);print}' >${bam_processing_dir}primary_aligment.txt
 
         #get col ID, CIGAR, MD & NH tags (if these last tags are missing, the value "NA" is given)
-        awk -F '\t' '{OFS="\t";ID=$1;CIGAR=$6;MD="";NH="";for(i=12;i<=NF;i++){if($i~/^MD\:Z\:.*/){gsub(/MD\:Z\:/,"",$i);if($i~/[0-9]/ || $i~/[A-Z]/){gsub(/[0-9]/,"",$i);gsub(/\^/,"",$i);if($i==""){$i=0}else{$i=length($i)}};MD=$i};if($i~/NH\:i\:[0-9]+/){gsub(/NH\:i\:/,"",$i);NH=$i}};if(MD==""){MD="NA"};if(NH==""){NH="NA"};print ID,CIGAR,MD,NH}' ${temp_dir}TAGS.tmp >${temp_dir}TAGS.txt && rm ${temp_dir}TAGS.tmp 
+        awk -F '\t' '{OFS="\t";ID=$1;CIGAR=$6;MD="";NH="";for(i=12;i<=NF;i++){if($i~/^MD\:Z\:.*/){gsub(/MD\:Z\:/,"",$i);if($i~/[0-9]/ || $i~/[A-Z]/){gsub(/[0-9]/,"",$i);gsub(/\^/,"",$i);if($i==""){$i=0}else{$i=length($i)}};MD=$i};if($i~/NH\:i\:[0-9]+/){gsub(/NH\:i\:/,"",$i);NH=$i}};if(MD==""){MD="NA"};if(NH==""){NH="NA"};print ID,CIGAR,MD,NH}' ${bam_processing_dir}TAGS.tmp >${bam_processing_dir}TAGS.txt && rm ${bam_processing_dir}TAGS.tmp 
 	
 	#join col ID+bed12 with the CIGAR, NH tag, & MD tag (no need to sort)
-	LANG=en_EN join -t $'\t' -11 -21 ${temp_dir}primary_aligment.txt ${temp_dir}TAGS.txt >${temp_dir}modifiedBed12.tmp
+	LANG=en_EN join -t $'\t' -11 -21 ${bam_processing_dir}primary_aligment.txt ${bam_processing_dir}TAGS.txt >${bam_processing_dir}modifiedBed12.tmp
 	
 	#looking for chimeric alignments with the flag
-	$samtools view -F 4 -F 0x100 -f 0x800 $bam_file >${temp_dir}chimeric_split1.tmp 
+	$samtools view -F 4 -F 0x100 -f 0x800 $bam_file >${bam_processing_dir}chimeric_split1.tmp 
 	
 	#if there's no such flag, keep the ID, and put in the second column False for all the contigs 
-	if [[ $(wc -l ${temp_dir}chimeric_split1.tmp|awk '{print $1}' ) -eq 0 ]];then 
+	if [[ $(wc -l ${bam_processing_dir}chimeric_split1.tmp|awk '{print $1}' ) -eq 0 ]];then 
 	
-	   awk 'OFS="\t"{print $1,"F"}' ${temp_dir}primary_aligment.txt >${temp_dir}chimeric_split1.txt && rm ${temp_dir}chimeric_split1.tmp
+	   awk 'OFS="\t"{print $1,"F"}' ${bam_processing_dir}primary_aligment.txt >${bam_processing_dir}chimeric_split1.txt && rm ${bam_processing_dir}chimeric_split1.tmp
 	   
 	#otherwise, keep the ID, and put in the second column True   
 	else
 	
-	   awk 'OFS="\t"{print $1,T}' ${temp_dir}chimeric_split1.tmp >${temp_dir}chimeric_split1.txt && rm ${temp_dir}chimeric_split1.tmp
+	   awk 'OFS="\t"{print $1,T}' ${bam_processing_dir}chimeric_split1.tmp >${bam_processing_dir}chimeric_split1.txt && rm ${bam_processing_dir}chimeric_split1.tmp
 	
 	fi
 
@@ -314,29 +314,29 @@ parseBam(){
 	IDs=($($samtools view -F 4 -f 0x1 $bam_file|cut -f 1|LANG=en_EN sort -u))
 
         #keep only ID & chromosome
-	$samtools view -f 0x1 $bam_file|cut -f 1,3 >${temp_dir}chimeric_split2.tmp
+	$samtools view -f 0x1 $bam_file|cut -f 1,3 >${bam_processing_dir}chimeric_split2.tmp
 	
 	#if we have splits, we will check if they are chimeric 
-	if [[ $(wc -l  ${temp_dir}chimeric_split2.tmp|awk '{print $1}') -gt 0 ]];then 
+	if [[ $(wc -l  ${bam_processing_dir}chimeric_split2.tmp|awk '{print $1}') -gt 0 ]];then 
 
-		if [ -f ${temp_dir}chimeric_split2.txt ];then rm ${temp_dir}chimeric_split2.txt;fi
+		if [ -f ${bam_processing_dir}chimeric_split2.txt ];then rm ${bam_processing_dir}chimeric_split2.txt;fi
 
 		for i in $(seq 0 $((${#IDs[*]}-1)));do
 
 		   One_ID=${IDs[$i]}
 		  
-		   all_chr=$(grep "$One_ID" ${temp_dir}chimeric_split2.tmp |cut -f 2|LANG=en_EN sort -u|wc -l)
+		   all_chr=$(grep "$One_ID" ${bam_processing_dir}chimeric_split2.tmp |cut -f 2|LANG=en_EN sort -u|wc -l)
 		   
 		   
 		   #if we have more than 1 chromosome for the assembly, it's chimeric
 		   if [[ $all_chr -gt 1 ]];then
 		  
 		   
-		      echo  -e "${One_ID}\tT" >>${temp_dir}chimeric_split2.txt
+		      echo  -e "${One_ID}\tT" >>${bam_processing_dir}chimeric_split2.txt
 		    
 		   else
 		    
-		      echo  -e "${One_ID}\tF" >>${temp_dir}chimeric_split2.txt
+		      echo  -e "${One_ID}\tF" >>${bam_processing_dir}chimeric_split2.txt
 		    
 		   fi
 
@@ -346,24 +346,24 @@ parseBam(){
 	
 	else
 	
-		awk 'OFS="\t"{print $1,"F"}' ${temp_dir}primary_aligment.txt >${temp_dir}chimeric_split2.txt
+		awk 'OFS="\t"{print $1,"F"}' ${bam_processing_dir}primary_aligment.txt >${bam_processing_dir}chimeric_split2.txt
 	
 	fi
 	
-	rm ${temp_dir}chimeric_split2.tmp ${temp_dir}primary_aligment.txt
+	rm ${bam_processing_dir}chimeric_split2.tmp ${bam_processing_dir}primary_aligment.txt
 	
 	#concatenate both types of chimeric
-	cat ${temp_dir}chimeric_split1.txt ${temp_dir}chimeric_split2.txt >${temp_dir}other_split.txt
+	cat ${bam_processing_dir}chimeric_split1.txt ${bam_processing_dir}chimeric_split2.txt >${bam_processing_dir}other_split.txt
 	
 	#unique on the ID : keep preferentially IDs with the value T
-	LANG=en_EN sort -k 1,1 -k 2,2r ${temp_dir}other_split.txt |LANG=en_EN sort -u -k 1,1 >${temp_dir}other_split.tmp && mv ${temp_dir}other_split.tmp ${temp_dir}other_split.txt
+	LANG=en_EN sort -k 1,1 -k 2,2r ${bam_processing_dir}other_split.txt |LANG=en_EN sort -u -k 1,1 >${bam_processing_dir}other_split.tmp && mv ${bam_processing_dir}other_split.tmp ${bam_processing_dir}other_split.txt
 	
 	#reconstruct the modified bed (12 classical bed columns + CIGAR + MD tag + NH tag + other_split + line number)
-	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${temp_dir}modifiedBed12.tmp) <(LANG=en_EN sort -k1,1 ${temp_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${temp_dir}modifiedBed12.txt
+	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 ${bam_processing_dir}modifiedBed12.tmp) <(LANG=en_EN sort -k1,1 ${bam_processing_dir}other_split.txt)| cut -f 2-|awk 'OFS="\t"{print $0,NR}' >${bam_processing_dir}modifiedBed12.txt
 
-        mapper_name=$(grep "@PG" ${temp_dir}sam_header.txt|cut -f 2|sed 's/ID://g')
+        mapper_name=$(grep "@PG" ${bam_processing_dir}sam_header.txt|cut -f 2|sed 's/ID://g')
 
-        total_line=$(tac ${temp_dir}modifiedBed12.txt|head -n 1|awk '{print $NF}')
+        total_line=$(tac ${bam_processing_dir}modifiedBed12.txt|head -n 1|awk '{print $NF}')
        
         echo -e "number of aligned contigs to parse is : $total_line"
      
@@ -374,23 +374,23 @@ parseBam(){
         echo -e "the file will be split, and each sub-file will contain at most $split_lines lines to process in parallel\n"
        
         #removing pre-existing input sub-files 
-        find $temp_dir -name "*_subfile.txt" -type f -delete
+        find $bam_processing_dir -name "*_subfile.txt" -type f -delete
        
         #split the modified bed in many chunks, then run the function parseModifiedBed() on them
-        awk -v split_lines=$split_lines -v temp_dir=$temp_dir 'NR%split_lines==1{OFS="\t";x=++i"_subfile.txt"}{OFS="";print > temp_dir x}' ${temp_dir}modifiedBed12.txt
+        awk -v split_lines=$split_lines -v bam_processing_dir=$bam_processing_dir 'NR%split_lines==1{OFS="\t";x=++i"_subfile.txt"}{OFS="";print > bam_processing_dir x}' ${bam_processing_dir}modifiedBed12.txt
        
         #removing pre-existing sub-results
-        find $temp_dir -name "*_subBed" -type f -delete
-        find $temp_dir -name "*_subTable" -type f -delete
+        find $bam_processing_dir -name "*_subBed" -type f -delete
+        find $bam_processing_dir -name "*_subTable" -type f -delete
        
         export -f parseModifiedBed
        
-        find $temp_dir -name "*_subfile.txt" |grep -E "[0-9]+_subfile.txt" |xargs -I {} -P $threads bash -c "parseModifiedBed {} "$mapper_name" "$forward_contig_color" "$reverse_contig_color""
+        find $bam_processing_dir -name "*_subfile.txt" |grep -E "[0-9]+_subfile.txt" |xargs -I {} -P $threads bash -c "parseModifiedBed {} "$mapper_name" "$forward_contig_color" "$reverse_contig_color""
       
-        cat $(find $temp_dir -name "*_subBed") |LANG=en_EN sort -k 1,1 -k 2,2n >$output_bed && find $temp_dir -name "*_subBed" -type f -delete
-        cat $(find $temp_dir -name "*_subTable") >$output_table && find $temp_dir -name "*_subTable" -type f -delete
+        cat $(find $bam_processing_dir -name "*_subBed") |LANG=en_EN sort -k 1,1 -k 2,2n >$output_bed && find $bam_processing_dir -name "*_subBed" -type f -delete
+        cat $(find $bam_processing_dir -name "*_subTable") >$output_table && find $bam_processing_dir -name "*_subTable" -type f -delete
        
-        rm -rf $temp_dir 
+        rm -rf $bam_processing_dir 
        
 }
 
