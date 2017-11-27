@@ -27,7 +27,7 @@ parseModifiedBed(){
         if [ -f ${bam_processing_dir}${file_number}_subBed ];then rm ${bam_processing_dir}${file_number}_subBed ;fi
     
 
-        j=1
+        #j=1
  	while read line;do
  	
 	
@@ -235,7 +235,7 @@ parseModifiedBed(){
 	   
 	   #echo -e "${chromosome}\t${start}\t${end}\tLineInSam=${LineInSam};ID=${ID};nb_hit=${nb_hit};nM=${nb_mismatch};del=${nb_deletion};ins=${nb_insertion};clipped_5p=${nb_5SoftClipped};clipped_3p=${nb_3SoftClipped}\t1\t${strand}\t${start}\t${end}\t${color}\t$((${nb_junction}+1))\t${split_exons_length}\t${split_exons_RelStart}"
 	   
-	j=$((j+1))  
+	#j=$((j+1))  
 	
 	#if [[ j -eq 76 ]];then exit ;fi
 	
