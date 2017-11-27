@@ -424,7 +424,7 @@ start_date=$(date)
 	  ID=$(echo "$line" | cut -f 1)
 	  
 	  #if there's an alignment as good as the best, it's a multihit
-	  multihit=$(awk -v nb_mismatch=$mismaches -v gaps=$gaps -v ID=$ID 'BEGIN{a=0}{if($1==ID && $6==nb_mismatch && $7==gaps){a=a+1}}END{print a}' ${temp_dir}UnmappedEntirelyFoundByBlast.tmp1)
+	  multihit=$(grep -P "$ID\t" ${temp_dir}UnmappedEntirelyFoundByBlast.tmp1 |awk -v nb_mismatch=$mismaches -v gaps=$gaps 'BEGIN{a=0}{$6==nb_mismatch && $7==gaps){a=a+1}}END{print a}')
 	  
 	  #1st block : print tag ID,lineInSAM,chr,start,end,strand,nb_mismatch,gaps,nb_hit
 	  #2nd block : reorganize the columns in order to add them to the final table, SNV is added just after ins : line_in_SAM,tagID,is_mapped,mapper,chr,start,end,junction,nb_junction,exon_coord,other_split,strand,nb_hit,mis,del,ins,SNV,clipped_5p,clipped_3p
