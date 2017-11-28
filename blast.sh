@@ -1,6 +1,4 @@
 #!/bin/bash
-#http://blog.nextgenetics.net/?e=8
- 
  
  usage() { echo -e "Usage: $0 -q <query in fasta> -s <target in fasta> -o <output_dir> -d <db name> [options]\n\n\tOptions :\n
                   -t <\"n\" or \"p\"> : nucleotide or protein blast (default : \"n\").\n

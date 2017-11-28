@@ -48,12 +48,17 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
                   -j   <GSNAP genome index name (if the index of the genome has already been created, supply its name. Otherwise, the index is re-created with the name "genome_index")>
 
-                  -k   <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>
+                  -k   <path to directory of GSNAP genome index (if you have a former run, you can supply the full path of the \"temp_dir/mapping_output/\" inside your former output directory, in order to re-use the same genome index and save time)>
 
                   -m   <path to bin/ of GSNAP (default : in $PATH environment variable)>
 
                   -p   <padj diff. gene threshold (default : 0.05)>
-
+		  
+                  -q <contig color (choose 1 or 2 ; default : 1) > 
+		  
+		          1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
+			  2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
+		  
                   -s   <path to samtools (default : in $PATH environment variable)>
 
                   -n   <thread number (default : 1)>
@@ -74,7 +79,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
           
 ## Description of the outputs :
 
-1. **`DiffContigsInfos.tsv`** : summary of all supplied contigs, no matter that they are aligned or not. The file `Contigs_Ontology_24_11_2016.xlsx` supplied with this README gives the ontology used. The column "TERM" in this xlsx file gives all the columns added by the annotation in the summarizing table.
+1. **`DiffContigsInfos.tsv`** : summary of all supplied contigs, no matter that they are aligned or not. The file `contigs_ontology.ods` supplied the used ontology. The column "TERM" in this last file, gives all the columns added by the annotation in the summarizing table `DiffContigsInfos.tsv`.
 
 2. **`diff_contigs.bed`** : BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -), with intensity scaled on the abs(log2FC).
 
@@ -98,7 +103,7 @@ Usage: ./getContigsAnnotation.sh < Required arguments > [Optional arguments]
 
 8. The summarizing table is enriched with neighborhood of the contigs (antisense, closest genes, etc).
 
-9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic, unmapped) is built (`DiffContigsInfos.tsv`).                  
+9. From the summarizing table, a table of the contigs grouped by loci (genic, antisense, intergenic, unmapped) is built (`ContigsPerLoci.tsv`).                  
  	
 ## Miscellaneous :
 
