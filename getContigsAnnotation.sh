@@ -568,7 +568,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${temp_dir}closest_3end.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable && rm ${temp_dir}closest_3end.txt
 
 	#searching UTR contigs (gives 1 col in addition of the lineInSAM : T or F)
-	awk '{if($3=="UTR"){print}}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${temp_dir}UTR_contigs.txt || { echo "searching of contigs in UTRs failure (bedtools intersect )!!" 1>&2; exit; }
+	awk '$3 ~ "UTR"{print}' $ref_annotation| $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${temp_dir}UTR_contigs.txt || { echo "searching of contigs in UTRs failure (bedtools intersect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${temp_dir}UTR_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${temp_dir}UTR_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${temp_dir}UTR_contigs.tmp && mv ${temp_dir}UTR_contigs.tmp ${temp_dir}UTR_contigs.txt
 
