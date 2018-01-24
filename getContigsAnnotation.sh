@@ -528,7 +528,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 		#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
 		paste -d'\t' <(awk 'OFS="\t"{print $4}' ${temp_dir}antisense_contigs.txt|awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') \
-		<(awk 'OFS="\t"{print $NF}' ${temp_dir}antisense_contigs.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${temp_dir}antisense_contigs.tmp && mv ${temp_dir}antisense_contigs.tmp ${temp_dir}antisense_contigs.txt
+		<(awk 'OFS="\t"{print $NF}' ${temp_dir}antisense_contigs.txt | awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");sub("Name=","");print}') >${temp_dir}antisense_contigs.tmp && mv ${temp_dir}antisense_contigs.tmp ${temp_dir}antisense_contigs.txt
 
 	else
 
@@ -547,7 +547,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 	#remark : for the last blocks of commands (in the 2nd argument of the "paste"), we use the table a[] to store the gff attributes, and we keep the result only if we have the regex "gene_name" (case insensitive)
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${temp_dir}sense_contigs.txt|awk -F';' '{print $1}'|awk '{sub("LineInSam=","",$1);print}') \
-	<(awk 'OFS="\t"{print $NF}' ${temp_dir}sense_contigs.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");print}') >${temp_dir}sense_contigs.tmp && mv ${temp_dir}sense_contigs.tmp ${temp_dir}sense_contigs.txt
+	<(awk 'OFS="\t"{print $NF}' ${temp_dir}sense_contigs.txt|awk -F';' 'OFS="\t"{print $1,$0}' | awk 'OFS="\t"{if($1=="."){$1="none";$2="none"};print}' | awk 'OFS="\t"{if($1=="none"){print}else{split($2,a,";");IGNORECASE=1;for(i=1;i<=length(a);i++){if(a[i]~/^gene_name/||a[i]~/^Name/){b=a[i]}};print $1,b}}' | awk 'BEGIN{IGNORECASE=1}OFS="\t"{sub("ID=","");sub("gene_name=","");sub("Name=","");print}') >${temp_dir}sense_contigs.tmp && mv ${temp_dir}sense_contigs.tmp ${temp_dir}sense_contigs.txt
 
 	LANG=en_EN join -t $'\t' -11 -21 <(LANG=en_EN sort -k1,1 $FinalTable) <(LANG=en_EN sort -k1,1 ${temp_dir}sense_contigs.txt) >${FinalTable}.tmp && mv ${FinalTable}.tmp $FinalTable
 
@@ -576,7 +576,7 @@ if [[ $(wc -l $diff_contigs_bed|awk '{print $1}') -gt 0 ]];then
 
 
 	#searching exonic contigs ( gives 1 col in addition of the line_in_SAM : T or F)
-	awk '{if($3=="exon"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${temp_dir}Exonic_contigs.txt || { echo "searching of contigs in exons failure (bedtools intersect )!!" 1>&2; exit; }
+	awk '{if($3=="exon" || $3=="CDS"){print}}' $ref_annotation | $bedtools intersect $orientation_option -a $diff_contigs_bed -b - -loj -nonamecheck | LANG=en_EN sort -k1,1 -k2,2n | LANG=en_EN sort -u -k4,4 >${temp_dir}Exonic_contigs.txt || { echo "searching of contigs in exons failure (bedtools intersect )!!" 1>&2; exit; }
 
 	paste -d'\t' <(awk 'OFS="\t"{print $4}' ${temp_dir}Exonic_contigs.txt | awk -F';' '{print $1}' | awk '{sub("LineInSam=","",$1);print}') <(awk 'OFS="\t"{print $NF}' ${temp_dir}Exonic_contigs.txt | awk -F';' '{if($1=="."){$1="F";print}else{print "T"}}') >${temp_dir}Exonic_contigs.tmp && mv ${temp_dir}Exonic_contigs.tmp ${temp_dir}Exonic_contigs.txt
 
