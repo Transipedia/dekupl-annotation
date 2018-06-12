@@ -1,0 +1,10 @@
+README.md
+setup.cfg
+setup.py
+src/annotation/__init__.py
+src/annotation/gsnap.py
+src/annotation/merged_counts.py
+src/dekupl_annotation2.egg-info/PKG-INFO
+src/dekupl_annotation2.egg-info/SOURCES.txt
+src/dekupl_annotation2.egg-info/dependency_links.txt
+src/dekupl_annotation2.egg-info/top_level.txt

@@ -1,0 +1,17 @@
+[[source]]
+verify_ssl = true
+url = "https://pypi.python.org/simple"
+name = "pypi"
+
+[dev-packages]
+"flake8" = "*"
+
+[packages]
+pytest = "*"
+"flake8-mypy" = "*"
+pytest-runner = "*"
+snakemake = "*"
+"flake8" = "*"
+
+[requires]
+python_version = "3.6"
