@@ -49,4 +49,9 @@ sub saveToFile {
     close($fh);
 }
 
+sub booleanEncoding {
+    my $v = shift;
+    my $encoded_v = $v? 'T' : 'F';
+}
+
 1;

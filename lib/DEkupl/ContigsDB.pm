@@ -33,6 +33,27 @@ sub loadContig {
   return $contig;
 }
 
+sub contigsIterator {
+  my $self = shift;
+  opendir(DIR, $self->db_folder) or die $!;
+  #my $tag = readdir(DIR);
+  my $tag;
+
+  return sub {
+  
+    while($tag = readdir(DIR)) {
+      #print STDERR "$tag\n";
+      last if $tag !~ /^\./;
+    }
+    
+    if($tag) {
+      return $self->loadContig($tag);
+    } else {
+      return;
+    }
+  }
+}
+
 sub _getTag {
   my $self = shift;
   my $contig = shift;

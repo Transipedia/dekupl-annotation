@@ -5,6 +5,8 @@ use Moose;
 
 use DEkupl::Utils;
 
+with 'DEkupl::Analyzer';
+
 has 'contigs_file' => (
   is => 'ro',
   isa => 'Str',
@@ -25,8 +27,8 @@ sub generateFasta {
   while(<$fhi>) {
     chomp;
     # nb_merged_kmers   assembly  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
-    my @f = split "\t", $_;
-    print $fho ">".$f[2]."\n".$f[1],"\n";
+    my $contig = _splitLine($_);
+    print $fho ">".$contig->{tag}."\n".$contig->{assembly},"\n";
   }
   close($fho);
   close($fhi);
@@ -40,23 +42,48 @@ sub loadContigsDB {
   my $i = 0;
   while(<$fh>) {
     chomp;
-    # nb_merged_kmers   assembly  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
-    my ($nb_merged_kmers, $assembly, $tag, $pvalue, $meanA, $meanB, $log2FC, @counts) = split "\t", $_;
-    my $contig = {
-      'tag' => $tag,
-      'assembly' => $assembly,
-      'pvalue' => $pvalue,
-      'meanA' => $meanA,
-      'meanB' => $meanB,
-      'log2FC' => $log2FC,
-      'counts' => \@counts,
-    };
+    my $contig = _splitLine($_);
     $contigs_db->saveContig($contig);
     # print STDERR "$i contigs loaded\n" if $i % 100 == 0;
     $i++;
   }
   
   close($fh);
+}
+
+sub getHeaders {
+  my $self = shift;
+  my $fh = DEkupl::Utils::getReadingFileHandle($self->contigs_file);
+  my $header = <$fh>;
+  chomp $header;
+  my $contig_headers = _splitLine($header);
+  return ('tag', 'nb_merged_kmers', 'assembly', 'pvalue', 'meanA', 'meanB', 'log2FC', @{$contig_headers->{counts}});
+}
+
+sub getValues {
+  my $self = shift;
+  my $contig = shift;
+  my @values = map { $contig->{$_} } ('tag', 'nb_merged_kmers', 'assembly', 'pvalue', 'meanA', 'meanB', 'log2FC');
+  push @values, @{$contig->{counts}};
+  return @values;
+}
+
+sub _splitLine {
+  my $line = shift;
+
+  # nb_merged_kmers   assembly  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
+  my ($nb_merged_kmers, $assembly, $tag, $pvalue, $meanA, $meanB, $log2FC, @counts) = split "\t", $line;
+
+  return {
+      'tag' => $tag,
+      'nb_merged_kmers' => $nb_merged_kmers,
+      'assembly' => $assembly,
+      'pvalue' => $pvalue,
+      'meanA' => $meanA,
+      'meanB' => $meanB,
+      'log2FC' => $log2FC,
+      'counts' => \@counts,
+  };
 }
 
 no Moose;

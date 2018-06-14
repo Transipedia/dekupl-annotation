@@ -12,6 +12,8 @@ use DEkupl::GSNAP;
 use DEkupl::Contigs;
 use DEkupl::ContigsDB;
 
+use DEkupl::Analyzer::BAM;
+
 =head1 SYNOPSIS
 
 dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
@@ -107,4 +109,24 @@ my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX",CLEANUP => 1);
 my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
 print STDERR "Loading contigs DB into $tempdir\n";
 $contigs->loadContigsDB($contigs_db);
-print STDERR "Closing contigs DB\n";
+
+print STDERR "Parsing BAM file\n";
+my $bam_analyzer = DEkupl::Analyzer::BAM->new(
+  contigs_db => $contigs_db,
+  bam_file => $bam_file,
+);
+
+my @analyzers = ($contigs, $bam_analyzer);
+
+# Print headers
+print join("\t",
+  map { $_->getHeaders() } @analyzers
+),"\n";
+
+# Print values
+my $contigs_it = $contigs_db->contigsIterator;
+while (my $contig = $contigs_it->()) {
+  print join("\t",
+    map { $_->getValues($contig) } @analyzers
+  ),"\n";
+}
