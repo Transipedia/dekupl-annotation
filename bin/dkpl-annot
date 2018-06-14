@@ -5,12 +5,16 @@ use warnings;
 
 use Getopt::Long qw(:config auto_version); # Get options
 use Pod::Usage; # Printing pod documentation in terminal
+use File::Temp qw/ tempdir /;
 
 use DEkupl;
+use DEkupl::GSNAP;
+use DEkupl::Contigs;
+use DEkupl::ContigsDB;
 
 =head1 SYNOPSIS
 
-dkpl-annot -c merged-diff-counts.tsv.gz -i index_dir/
+dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 
 =head1 OPTIONS
 
@@ -23,6 +27,7 @@ dkpl-annot -c merged-diff-counts.tsv.gz -i index_dir/
 =head2 OPTIONAL ARGUMENTS
 
   -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
+  -t,--treads INT     number of threads
   -h,--help           show this help message and exit
 
 =cut
@@ -30,15 +35,21 @@ dkpl-annot -c merged-diff-counts.tsv.gz -i index_dir/
 my ($verbose,$man,$help);
 my ($contigs_file, $index_dir, $version);
 my $output_dir = "DEkupl_annotation";
+my $index_name = "GRCh38-chr22";
+my $nb_threads = 1;
+my $tmp_dir = "/tmp";
+my $debug = 1;
 
 GetOptions(
     "v|verbose"        => \$verbose,
     "man"              => \$man,
     "help"             => \$help,
     # Input / Output
-    "c|contigs=s"      => \$contigs_file,
+    #"c|contigs=s"      => \$contigs_file,
     "o|output=s"       => \$output_dir,
     "i|index=s"        => \$index_dir,
+    # Options
+    "t|threads=i"      => \$nb_threads,
     "version"          => \$version,
 ) or pod2usage(-verbose => 1);
 
@@ -50,6 +61,8 @@ if($version) {
   exit 0;
 }
 
+$contigs_file = shift;
+
 if(!defined $contigs_file) {
   pod2usage(-verbose => 1, -message => "Missing contig file (-c,--contigs)");
 }
@@ -57,3 +70,41 @@ if(!defined $contigs_file) {
 if(!defined $index_dir) {
   pod2usage(-verbose => 1, -message => "Missing index directory (-i,--index)");
 }
+
+# Create output dir
+mkdir $output_dir;
+
+# Create contigs object
+my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file);
+my $gsnap = DEkupl::GSNAP->new(
+  index_dir => "$index_dir/gsnap",
+  index_name => $index_name,
+  nb_threads => $nb_threads,
+);
+
+# Create FASTA file
+my $fasta_file = "$output_dir/contigs.fa.gz";
+if(-e $fasta_file && $debug) {
+  print STDERR "Skipping FASTA file\n";
+} else {
+  print STDERR "Generating FASTA file\n";
+$contigs->generateFasta($fasta_file);
+}
+
+
+# Generate BAM file
+my $bam_file = "$output_dir/contigs.bam";
+if(-e $bam_file && $debug) {
+  print STDERR "Skipping GSNAP mapping\n";
+} else {
+  print STDERR "Running GSNAP\n";
+  $gsnap->generateBam($fasta_file,$bam_file);
+}
+
+# Create contigs DB
+#my $tempdir = tempdir(CLEANUP => 1);
+my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX",CLEANUP => 1);
+my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
+print STDERR "Loading contigs DB into $tempdir\n";
+$contigs->loadContigsDB($contigs_db);
+print STDERR "Closing contigs DB\n";
