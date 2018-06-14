@@ -1,0 +1,59 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Long qw(:config auto_version); # Get options
+use Pod::Usage; # Printing pod documentation in terminal
+
+use DEkupl;
+
+=head1 SYNOPSIS
+
+dkpl-annot -c merged-diff-counts.tsv.gz -i index_dir/
+
+=head1 OPTIONS
+
+=head2 REQUIERED ARGUMENTS
+
+  -c,--contigs STR    merged-diff-counts.tsv.gz (contigs in "{A}_vs_{B}_kmer_counts" 
+                      directory from Dekupl-run result)
+  -i,--index DIR      path to the index directory (created with dkplannot index)
+
+=head2 OPTIONAL ARGUMENTS
+
+  -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
+  -h,--help           show this help message and exit
+
+=cut
+
+my ($verbose,$man,$help);
+my ($contigs_file, $index_dir, $version);
+my $output_dir = "DEkupl_annotation";
+
+GetOptions(
+    "v|verbose"        => \$verbose,
+    "man"              => \$man,
+    "help"             => \$help,
+    # Input / Output
+    "c|contigs=s"      => \$contigs_file,
+    "o|output=s"       => \$output_dir,
+    "i|index=s"        => \$index_dir,
+    "version"          => \$version,
+) or pod2usage(-verbose => 1);
+
+pod2usage(-verbose => 1) if ($help);
+pod2usage(-verbose => 2) if ($man);
+
+if($version) {
+  print STDERR "rankvar2 ", $DEkupl::VERSION, "\n";
+  exit 0;
+}
+
+if(!defined $contigs_file) {
+  pod2usage(-verbose => 1, -message => "Missing contig file (-c,--contigs)");
+}
+
+if(!defined $index_dir) {
+  pod2usage(-verbose => 1, -message => "Missing index directory (-i,--index)");
+}
