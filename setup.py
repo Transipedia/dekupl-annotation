@@ -23,7 +23,7 @@ class PyTest(TestCommand):
 setup(
     name='dekupl-annotation2',
     packages=find_packages('src'),
-    package_dir={'': 'src'},
+    package_dir={'': 'dkplannot'},
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
 )

@@ -2,7 +2,7 @@ import os
 
 from annotation.merged_counts import MergedCounts
 
-MATRIX_TOY = "tests/datas/merged-diff-counts.tsv.gz"
+MATRIX_TOY = "tests/datas/merged-diff-counts.chr22.tsv.gz"
 TEMP_DIR = "tests/datas/tmp"
 
 def test_mergedcounts_class():

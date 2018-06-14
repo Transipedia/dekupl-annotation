@@ -5,6 +5,7 @@ name = "pypi"
 
 [dev-packages]
 "flake8" = "*"
+pylint = "*"
 
 [packages]
 pytest = "*"
@@ -12,6 +13,7 @@ pytest = "*"
 pytest-runner = "*"
 snakemake = "*"
 "flake8" = "*"
+pickledb = "*"
 
 [requires]
 python_version = "3.6"

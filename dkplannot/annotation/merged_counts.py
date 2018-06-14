@@ -13,9 +13,14 @@ class MergedCounts(object):
     def file(self, value: str) -> None:
         if value is not None:
             self._file = value
-
         else:
             raise ValueError("Can't set a NoneType value.")
+
+    def load_contigs(self, contig_db: ContigDB):
+        with gzip.open(self.file, "rt") as content:
+            header = content.readline()
+            for line in content:
+                split_line = line.rstrip().split("\t")
 
     def generate_fasta(self, output: str) -> None:
         """
@@ -28,5 +33,4 @@ class MergedCounts(object):
                 split_line = line.rstrip().split("\t")
                 out.write(">" + split_line[2] + "\n")
                 out.write(split_line[1] + "\n")
-
         out.close()
