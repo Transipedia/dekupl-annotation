@@ -1,7 +1,0 @@
-README.md
-setup.cfg
-setup.py
-dkplannot/dekupl_annotation2.egg-info/PKG-INFO
-dkplannot/dekupl_annotation2.egg-info/SOURCES.txt
-dkplannot/dekupl_annotation2.egg-info/dependency_links.txt
-dkplannot/dekupl_annotation2.egg-info/top_level.txt
