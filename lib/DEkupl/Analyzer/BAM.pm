@@ -19,6 +19,12 @@ my @columns = (
   'chromosome',
   'start',
   'end',
+  'nb_insertion',
+  'nb_deletion',
+  'nb_splice',
+  'clipped_3p',
+  'clipped_5p',
+  'query_cover',
   'nb_hit',
   'nb_mismatch',
 );
@@ -55,21 +61,62 @@ sub BUILD {
 
     $contig->{is_mapped} = DEkupl::Utils::booleanEncoding(!($sam_line->{flag} & $flags{UNMAPPED}));
     $contig->{line_in_sam} = $i;
+
+    # We skip the rest of annotation of the contig is unmapped
+    next if $sam_line->{flag} & $flags{UNMAPPED};
+
     $contig->{chromosome} = $sam_line->{rname};
     $contig->{start} = $sam_line->{pos};
 
     # Compute alignment length from cigar
-    my $alignement_length = 0;
-    map { $alignement_length += $_->{nb} if $_->{op} =~ /[MDNX=]/ } @{$sam_line->{cigar}};
+    # Extracting information from CIGAR element
+    my $ref_aln_length = 0;   # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
+    my $query_aln_length = 0; # Length of the alignment on the query (including deletion)
+    my $nb_insertion = 0;     # Number of insertion in the query (I cigar element)
+    my $nb_deletion = 0;      # Number of deletiong in the query (D cigar element)
+    my $nb_splice = 0;        # Number of splice in the query (N cigar element)
+    foreach my $cigel (@{$sam_line->{cigar}}) {
+      if($cigel->{op} =~ /[MX=]/ ) {
+        $ref_aln_length += $cigel->{nb};
+        $query_aln_length += $cigel->{nb};
+      } elsif($cigel->{op} eq 'I') {
+        $nb_insertion++;
+        $query_aln_length += $cigel->{nb};
+      } elsif($cigel->{op} eq 'N') {
+        $nb_splice++;
+        $ref_aln_length += $cigel->{nb};
+      } elsif($cigel->{op} eq 'D') {
+        $nb_deletion++;
+        $ref_aln_length += $cigel->{nb};
+      }
+    }
 
-    $contig->{end} = $sam_line->{pos} + $alignement_length - 1;
+    $contig->{nb_insertion} = $nb_insertion;
+    $contig->{nb_deletion} = $nb_deletion; 
+    $contig->{nb_splice} = $nb_splice;
+    $contig->{end} = $sam_line->{pos} + $ref_aln_length - 1;
 
+    # Check if alignment is clipped (Hard or Soft)
+    my $clipped_5p = 0;
+    my $clipped_3p = 0;
+    if(@{$sam_line->{cigar}} > 1) {
+      $clipped_5p = 1 if $sam_line->{cigar}->[0]->{op} =~ /[SH]/;
+      $clipped_3p = 1 if $sam_line->{cigar}->[$#{$sam_line->{cigar}}]->{op} =~ /[SH]/; 
+    }
+    $contig->{clipped_3p} = DEkupl::Utils::booleanEncoding($clipped_3p);
+    $contig->{clipped_5p} = DEkupl::Utils::booleanEncoding($clipped_5p);
+
+    # Compute the query cover (fraction of based aligned)
+    # As in BLAST
+    my $query_cover = $query_aln_length / length($sam_line->{seq});
+    $contig->{query_cover} = $query_cover;
+
+    # Extracting information from extented SAM fields
     my $nb_hit = $sam_line->{extended_fields}->{NH};
-    $contig->{nb_hit} = $nb_hit if defined $nb_hit;
-
     my $nb_mismatch = $sam_line->{extended_fields}->{NM};
+    
+    $contig->{nb_hit} = $nb_hit if defined $nb_hit;
     $contig->{nb_mismatch} = $nb_mismatch if defined $nb_mismatch;
-
 
     # Save contig
     $self->contigs_db->saveContig($contig);

@@ -13,6 +13,16 @@ has 'contigs_file' => (
   required => 1,
 );
 
+my @columns = (
+  'tag',
+  'nb_merged_kmers',
+  'assembly',
+  'pvalue',
+  'meanA',
+  'meanB',
+  'log2FC'
+);
+
 # sub BUILD {
 #   my $self = shift;
 #   # Load contigs?
@@ -57,13 +67,13 @@ sub getHeaders {
   my $header = <$fh>;
   chomp $header;
   my $contig_headers = _splitLine($header);
-  return ('tag', 'nb_merged_kmers', 'assembly', 'pvalue', 'meanA', 'meanB', 'log2FC', @{$contig_headers->{counts}});
+  return (@columns, @{$contig_headers->{counts}});
 }
 
 sub getValues {
   my $self = shift;
   my $contig = shift;
-  my @values = map { $contig->{$_} } ('tag', 'nb_merged_kmers', 'assembly', 'pvalue', 'meanA', 'meanB', 'log2FC');
+  my @values = map { $contig->{$_} } @columns;
   push @values, @{$contig->{counts}};
   return @values;
 }
