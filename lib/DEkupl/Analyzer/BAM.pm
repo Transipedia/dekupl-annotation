@@ -46,7 +46,7 @@ my %flags = (
 
 sub BUILD {
   my $self = shift;
-  my $bam_it = $self->bamFileIterator();
+  my $bam_it = DEkupl::Utils::bamFileIterator();
   my $i = 0;
   while(my $sam_line = $bam_it->()) {
 
@@ -136,45 +136,6 @@ sub getValues {
   my $contig = shift;
   my @values = map { defined $contig->{$_}? $contig->{$_} : 'NA' } @columns;
   return @values;
-}
-
-sub bamFileIterator {
-  my $self = shift;
-  my $region = shift;
-  $region = "" if !defined $region;
-  my $file = $self->bam_file;
-  open(my $fh, "-|", "samtools view $file $region" )or die "Cannot open $file, check if samtools are installed.";
-
-  return sub {
-    my $line = <$fh>;
-    if($line) {
-      return _parseSAMLine($line);
-    }
-    return $line;
-  }
-
-}
-
-sub _parseSAMLine {
-  my $line = shift;
-  my ($qname,$flag,$rname,$pos,$mapq,$cigar,$rnext,$pnext,$tlen,$seq,$qual,@others) = split("\t",$line);
-  my @cigar_hash = map { { op => substr($_,-1), nb => substr($_,0,length($_)-1)} } $cigar =~ /(\d+\D)/g;
-  my %extended_fields = map { my ($id, $t, $v) = split ':', $_; $id => $v; } @others;
-  return {
-    qname => $qname,
-    flag => $flag,
-    rname => $rname,
-    pos => $pos,
-    mapq => $mapq,
-    cigar => \@cigar_hash,
-    original_cigar => $cigar,
-    rnext => $rnext,
-    pnext => $pnext,
-    tlen => $tlen,
-    seq => $seq,
-    qual => $qual,
-    extended_fields => \%extended_fields,
-  };
 }
 
 # sub _isFlagged {
