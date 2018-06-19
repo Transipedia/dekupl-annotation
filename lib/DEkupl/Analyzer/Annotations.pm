@@ -17,7 +17,9 @@ has 'interval_query' => (
 # TODO This should be a hash to auto generate the documentation!
 my @columns = (
   'gene_id',
-  'gene_symbol'
+  'gene_symbol',
+  'exonic',
+  'intronic',
 );
 
 sub BUILD {
@@ -40,6 +42,8 @@ sub BUILD {
 
       my $results = $self->interval_query->fetchByRegion($query);
 
+      my $exonic = 0;
+      my $intronic;
       foreach my $res (@{$results}) {
         
         my $res_type = ref($res);
@@ -50,8 +54,20 @@ sub BUILD {
         if($res_type eq 'DEkupl::Annotations::Gene') {
           $contig->{gene_id} = $res->id;
           $contig->{gene_symbol} = $res->symbol;
+        } elsif($res_type eq 'DEkupl::Annotations::Exon') {
+          $exonic = 1;
+          # The contig overlap the exon and the intron
+          if ($query->start < $res->start || $query->end > $res->end) {
+            $intronic = 1;
+          } elsif(!defined $intronic) {
+            $intronic = 0;
+          }
         }
       }
+      $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
+
+      $contig->{exonic} = DEkupl::Utils::booleanEncoding($exonic);
+      $contig->{intronic} = DEkupl::Utils::booleanEncoding($intronic);
 
       # Save contig
       $self->contigs_db->saveContig($contig);
