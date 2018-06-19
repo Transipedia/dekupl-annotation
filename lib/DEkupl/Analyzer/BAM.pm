@@ -13,12 +13,19 @@ has 'bam_file' => (
   required => 1,
 );
 
+has 'is_stranded' => (
+  is => 'ro',
+  isa => 'Bool',
+  default => 1,
+);
+
 my @columns = (
   'is_mapped',
   'line_in_sam',
   'chromosome',
   'start',
   'end',
+  'strand',
   'nb_insertion',
   'nb_deletion',
   'nb_splice',
@@ -46,7 +53,7 @@ my %flags = (
 
 sub BUILD {
   my $self = shift;
-  my $bam_it = DEkupl::Utils::bamFileIterator();
+  my $bam_it = DEkupl::Utils::bamFileIterator($self->bam_file);
   my $i = 0;
   while(my $sam_line = $bam_it->()) {
 
@@ -67,6 +74,17 @@ sub BUILD {
 
     $contig->{chromosome} = $sam_line->{rname};
     $contig->{start} = $sam_line->{pos};
+
+    # Set strand if we are in 'strand-specific' mode
+    if($self->is_stranded) {
+      my $strand;
+      if($sam_line->{flag} & $flags{REVERSE_COMPLEMENTED}) {
+        $strand = '-';
+      } else {
+        $strand = '+';
+      }
+      $contig->{strand} = $strand;
+    }
 
     # Compute alignment length from cigar
     # Extracting information from CIGAR element

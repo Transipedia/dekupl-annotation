@@ -11,8 +11,11 @@ use DEkupl;
 use DEkupl::GSNAP;
 use DEkupl::Contigs;
 use DEkupl::ContigsDB;
+use DEkupl::Annotations;
+use DEkupl::IntervalQuery;
 
 use DEkupl::Analyzer::BAM;
+use DEkupl::Analyzer::Annotations;
 
 =head1 SYNOPSIS
 
@@ -22,8 +25,7 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 
 =head2 REQUIERED ARGUMENTS
 
-  -c,--contigs STR    merged-diff-counts.tsv.gz (contigs in "{A}_vs_{B}_kmer_counts" 
-                      directory from Dekupl-run result)
+  
   -i,--index DIR      path to the index directory (created with dkplannot index)
 
 =head2 OPTIONAL ARGUMENTS
@@ -33,6 +35,9 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
   -h,--help           show this help message and exit
 
 =cut
+
+# -c,--contigs STR    merged-diff-counts.tsv.gz (contigs in "{A}_vs_{B}_kmer_counts" 
+#                       directory from Dekupl-run result)
 
 my ($verbose,$man,$help);
 my ($contigs_file, $index_dir, $version);
@@ -76,10 +81,16 @@ if(!defined $index_dir) {
 # Create output dir
 mkdir $output_dir;
 
+# Find files from index
+# TODO we should have a class for that
+# that load the config file and check that everything is ok
+my $gff_file = "$index_dir/$index_name.gff.gz";
+my $gnsap_index_dir = "$index_dir/gsnap";
+
 # Create contigs object
 my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file);
 my $gsnap = DEkupl::GSNAP->new(
-  index_dir => "$index_dir/gsnap",
+  index_dir => $gnsap_index_dir,
   index_name => $index_name,
   nb_threads => $nb_threads,
 );
@@ -116,7 +127,24 @@ my $bam_analyzer = DEkupl::Analyzer::BAM->new(
   bam_file => $bam_file,
 );
 
-my @analyzers = ($contigs, $bam_analyzer);
+print STDERR "Loading annotations into memory\n";
+my $annotations = DEkupl::Annotations->new();
+$annotations->loadFromGFF($gff_file,'gff3');
+
+print STDERR "Loading annotations to the interval tree\n";
+my $interval_query = DEkupl::IntervalQuery->new();
+$interval_query->loadAnnotations($annotations);
+
+print STDERR "Annotating contigs\n";
+my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
+  contigs_db => $contigs_db,
+  interval_query => $interval_query,
+);
+
+my @analyzers = ($contigs, $bam_analyzer, $annot_analyzer);
+
+# TODO we should print automatic headers with descriptions of each fields as
+# in the VCF format!!!
 
 # Print headers
 print join("\t",

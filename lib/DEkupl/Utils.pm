@@ -12,6 +12,8 @@ subtype 'Strand',
   where { $_ =~ /^(\+|-)$/ },
   message { "Strand must be either '+' or '-'" };
 
+our $NA_value = 'NA';
+
 sub getReadingFileHandle {
     my $file = shift;
     my $gzip = shift;

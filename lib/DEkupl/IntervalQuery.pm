@@ -35,6 +35,33 @@ sub addInterval {
   $interval_tree->insert($genomic_interval, $genomic_interval->start, $genomic_interval->end + 1);
 }
 
+=head2 loadAnnotations
+
+  Arg [1] : Annotations     - DEkupl::Annotations object
+  Description: Load annotations into the intervalQuery
+
+=cut
+
+sub loadAnnotations {
+  my $self = shift;
+  my $annotations = shift;
+
+  # TODO Verify that annotations are indeed DEkupl::Anotations
+
+  foreach my $gene ($annotations->allGenes) {
+    # Skip empty genes
+    next if $gene->nbExons == 0;
+
+    # Add gene to the interval query
+    $self->addInterval($gene);
+    
+    # Add exons to the interval query
+    foreach my $exon ($gene->allExons) {
+      $self->addInterval($exon);
+    }
+  }
+}
+
 =head2 fetchByRegion
 
   Arg [1] : GenomicInterval     - Genomic Interval
