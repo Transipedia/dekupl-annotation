@@ -26,6 +26,7 @@ my @columns = (
   'clipped_3p',
   'clipped_5p',
   'query_cover',
+  'alignment_identity',
   'nb_hit',
   'nb_mismatch',
 );
@@ -85,6 +86,7 @@ sub BUILD {
     # Extracting information from CIGAR element
     my $ref_aln_length = 0;   # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
     my $query_aln_length = 0; # Length of the alignment on the query (including deletion)
+    my $nb_match = 0;
     my $nb_insertion = 0;     # Number of insertion in the query (I cigar element)
     my $nb_deletion = 0;      # Number of deletiong in the query (D cigar element)
     my $nb_splice = 0;        # Number of splice in the query (N cigar element)
@@ -92,6 +94,7 @@ sub BUILD {
       if($cigel->{op} =~ /[MX=]/ ) {
         $ref_aln_length += $cigel->{nb};
         $query_aln_length += $cigel->{nb};
+        $nb_match += $cigel->{nb};
       } elsif($cigel->{op} eq 'I') {
         $nb_insertion++;
         $query_aln_length += $cigel->{nb};
@@ -123,6 +126,7 @@ sub BUILD {
     # As in BLAST
     my $query_cover = $query_aln_length / length($sam_line->{seq});
     $contig->{query_cover} = $query_cover;
+    
 
     # Extracting information from extented SAM fields
     my $nb_hit = $sam_line->{extended_fields}->{NH};
@@ -131,6 +135,10 @@ sub BUILD {
     $contig->{nb_hit} = $nb_hit if defined $nb_hit;
     $contig->{nb_mismatch} = $nb_mismatch if defined $nb_mismatch;
 
+    # Compute alignemnt identity
+    my $alignment_identity = ($nb_match - $nb_mismatch) / $query_aln_length;
+    $contig->{alignment_identity} = $alignment_identity;
+    
     # Save contig
     $self->contigs_db->saveContig($contig);
     $i++;
