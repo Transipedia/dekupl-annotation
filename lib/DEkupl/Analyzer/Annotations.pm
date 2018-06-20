@@ -18,8 +18,10 @@ has 'interval_query' => (
 my @columns = (
   'gene_id',
   'gene_symbol',
+  'gene_biotype',
   'as_gene_id',
   'as_gene_symbol',
+  'as_gene_biotype',
   'exonic',
   'intronic',
 );
@@ -70,9 +72,11 @@ sub BUILD {
             if($strand eq 'fwd') {
               $contig->{gene_id} = $res->id;
               $contig->{gene_symbol} = $res->symbol;
+              $contig->{gene_biotype} = $res->biotype;
             } else {
               $contig->{as_gene_id} = $res->id;
               $contig->{as_gene_symbol} = $res->symbol;
+              $contig->{as_gene_biotype} = $res->biotype;
             }
           } elsif($res_type eq 'DEkupl::Annotations::Exon') {
             $exonic = 1;

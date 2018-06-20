@@ -76,13 +76,16 @@ sub loadFromGFF {
 
       my $gene = $self->getGene($gene_id);
       if(!defined $gene) {
-        # If this gene is not defined yet, we create a new entry
-        $gene = DEkupl::Annotations::Gene->new(
+        my %gene_info = (
           chr     => $annot->{chr},
           strand  => $annot->{strand},
           id      => $gene_id,
           symbol  => $gene_symbol,
         );
+        my $biotype = $annot->{attributes}->{biotype};
+        $gene_info{biotype} = $biotype if defined $biotype;
+        # If this gene is not defined yet, we create a new entry
+        $gene = DEkupl::Annotations::Gene->new(%gene_info);
         $self->addGene($gene);
       }
     }

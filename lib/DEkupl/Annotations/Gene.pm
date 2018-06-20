@@ -23,6 +23,7 @@ has exons_hash => (
 
 has id  => (is => 'ro', isa => 'Str', required => 1);
 has symbol => (is => 'ro', isa => 'Str');
+has biotype => (is => 'ro', isa => 'Str');
 
 # Compute start on the fly
 has '+start' => (
