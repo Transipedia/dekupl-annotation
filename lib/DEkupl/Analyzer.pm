@@ -8,6 +8,12 @@ has 'contigs_db' => (
   isa => 'DEkupl::ContigsDB'
 );
 
+has 'is_stranded' => (
+  is => 'ro',
+  isa => 'Bool',
+  required => 1,
+);
+
 # return header columns to be printed in the output file
 requires 'getHeaders';
 

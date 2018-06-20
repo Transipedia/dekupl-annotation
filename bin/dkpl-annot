@@ -25,13 +25,13 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 
 =head2 REQUIERED ARGUMENTS
 
-  
   -i,--index DIR      path to the index directory (created with dkplannot index)
 
 =head2 OPTIONAL ARGUMENTS
 
   -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
   -t,--treads INT     number of threads
+  -s,--stranded       RNA-Seq is strand-specific.
   -h,--help           show this help message and exit
 
 =cut
@@ -46,6 +46,7 @@ my $index_name = "GRCh38-chr22";
 my $nb_threads = 1;
 my $tmp_dir = "/tmp";
 my $debug = 1;
+my $is_stranded = 0;
 
 GetOptions(
     "v|verbose"        => \$verbose,
@@ -57,6 +58,7 @@ GetOptions(
     "i|index=s"        => \$index_dir,
     # Options
     "t|threads=i"      => \$nb_threads,
+    "s|stranded"       => \$is_stranded,
     "version"          => \$version,
 ) or pod2usage(-verbose => 1);
 
@@ -88,7 +90,7 @@ my $gff_file = "$index_dir/$index_name.gff.gz";
 my $gnsap_index_dir = "$index_dir/gsnap";
 
 # Create contigs object
-my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file);
+my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file, is_stranded => $is_stranded);
 my $gsnap = DEkupl::GSNAP->new(
   index_dir => $gnsap_index_dir,
   index_name => $index_name,
@@ -125,6 +127,7 @@ print STDERR "Parsing BAM file\n";
 my $bam_analyzer = DEkupl::Analyzer::BAM->new(
   contigs_db => $contigs_db,
   bam_file => $bam_file,
+  is_stranded => $is_stranded,
 );
 
 print STDERR "Loading annotations into memory\n";
@@ -139,6 +142,7 @@ print STDERR "Annotating contigs\n";
 my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
   contigs_db => $contigs_db,
   interval_query => $interval_query,
+  is_stranded => $is_stranded,
 );
 
 my @analyzers = ($contigs, $bam_analyzer, $annot_analyzer);

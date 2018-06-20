@@ -13,12 +13,6 @@ has 'bam_file' => (
   required => 1,
 );
 
-has 'is_stranded' => (
-  is => 'ro',
-  isa => 'Bool',
-  default => 1,
-);
-
 my @columns = (
   'is_mapped',
   'line_in_sam',

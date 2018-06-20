@@ -18,6 +18,8 @@ has 'interval_query' => (
 my @columns = (
   'gene_id',
   'gene_symbol',
+  'as_gene_id',
+  'as_gene_symbol',
   'exonic',
   'intronic',
 );
@@ -31,39 +33,59 @@ sub BUILD {
 
     if($contig->{is_mapped}) {
 
-      # TODO we should add a non strand-specific mode!
-      # Query annotations
+      my ($fwd_results,$rv_results);
+
       my $query = DEkupl::GenomicInterval->new(
-        chr => $contig->{chromosome},
-        start => $contig->{start},
-        end => $contig->{end},
-        strand => $contig->{strand},
+          chr => $contig->{chromosome},
+          start => $contig->{start},
+          end => $contig->{end},
       );
 
-      my $results = $self->interval_query->fetchByRegion($query);
+      if($self->is_stranded) {
+        # TODO we should add a non strand-specific mode!
+        # Query annotations
+        $query->strand($contig->{strand});
+        $fwd_results = $self->interval_query->fetchByRegion($query);
+        $query->strand(DEkupl::Utils::reverseStrand($contig->{strand}));
+        $rv_results = $self->interval_query->fetchByRegion($query);
+      } else {
+        $query->strand('+');
+        $fwd_results = $self->interval_query->fetchByRegion($query);
+        $query->strand('-');
+        push @{$fwd_results}, @{$self->interval_query->fetchByRegion($query)};
+        $rv_results = [];
+      }
 
       my $exonic = 0;
       my $intronic;
-      foreach my $res (@{$results}) {
-        
-        my $res_type = ref($res);
+      foreach my $strand (('fwd','rv')) {
+        my @results = $strand eq 'fwd'? @{$fwd_results} : @{$rv_results};
+        foreach my $res (@results) {
+          my $res_type = ref($res);
 
-        # TODO we should do a special treatment when there is multiple genes overlapping
-        # the position. Usually we should choose the one that is 'protein_coding' over
-        # a non_conding gene!
-        if($res_type eq 'DEkupl::Annotations::Gene') {
-          $contig->{gene_id} = $res->id;
-          $contig->{gene_symbol} = $res->symbol;
-        } elsif($res_type eq 'DEkupl::Annotations::Exon') {
-          $exonic = 1;
-          # The contig overlap the exon and the intron
-          if ($query->start < $res->start || $query->end > $res->end) {
-            $intronic = 1;
-          } elsif(!defined $intronic) {
-            $intronic = 0;
+          # TODO we should do a special treatment when there is multiple genes overlapping
+          # the position. Usually we should choose the one that is 'protein_coding' over
+          # a non_conding gene!
+          if($res_type eq 'DEkupl::Annotations::Gene') {
+            if($strand eq 'fwd') {
+              $contig->{gene_id} = $res->id;
+              $contig->{gene_symbol} = $res->symbol;
+            } else {
+              $contig->{as_gene_id} = $res->id;
+              $contig->{as_gene_symbol} = $res->symbol;
+            }
+          } elsif($res_type eq 'DEkupl::Annotations::Exon') {
+            $exonic = 1;
+            # The contig overlap the exon and the intron
+            if ($query->start < $res->start || $query->end > $res->end) {
+              $intronic = 1;
+            } elsif(!defined $intronic) {
+              $intronic = 0;
+            }
           }
         }
       }
+      
       $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
 
       $contig->{exonic} = DEkupl::Utils::booleanEncoding($exonic);

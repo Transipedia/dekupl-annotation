@@ -14,6 +14,14 @@ subtype 'Strand',
 
 our $NA_value = 'NA';
 
+sub reverseStrand {
+  my $strand = shift;
+  if($strand eq '+') {
+    return '-';
+  }
+  return '+';
+}
+
 sub getReadingFileHandle {
     my $file = shift;
     my $gzip = shift;
