@@ -88,6 +88,79 @@ sub fetchByRegion {
   return [];
 }
 
+=head2 fetchNearest5prim
+
+  Arg [1] : GenomicInterval     - Genomic Interval
+  Arg [2] : (Optional) Boolean  - Windowed query, only return intervals which
+                                  are completely contained in the queried region.
+  ReturnType : (GenomicInterval,Int) return the retrieved element and the distance to this interval
+
+Search for the closest interval in downstream that does not contain the query
+and returns the line associated to this interval. 
+
+=cut
+
+sub fetchNearest5prim {
+  my ($self,$genomic_interval) = @_;
+
+  if($genomic_interval->strand eq '+') {
+    return $self->_fetchNearestDown($genomic_interval);
+  } else {
+    return $self->_fetchNearestUp($genomic_interval);
+  }
+}
+
+=head2 fetchNearest3prim
+
+  Arg [1] : GenomicInterval     - Genomic Interval
+  Arg [2] : (Optional) Boolean  - Windowed query, only return intervals which
+                                  are completely contained in the queried region.
+  ReturnType : (GenomicInterval,Int) return the retrieved element and the distance to this interval
+
+Search for the closest interval in upstream that does not contain the query
+and returns the line associated to this interval. 
+  
+=cut
+
+sub fetchNearest3prim {
+  my ($self,$genomic_interval) = @_;
+
+  if($genomic_interval->strand eq '+') {
+    return $self->_fetchNearestUp($genomic_interval);
+  } else {
+    return $self->_fetchNearestDown($genomic_interval);
+  }
+}
+
+sub _fetchNearestDown {
+  my ($self,$genomic_interval) = @_;
+
+  my $interval_tree = $self->getIntervalTree($genomic_interval->chr,$genomic_interval->strand);
+
+  if(defined $interval_tree) {
+    my $res = $interval_tree->fetch_nearest_down($genomic_interval->start);
+    my $dist = defined $res? ($genomic_interval->start - $res->end) : undef;
+    return ($res,$dist);
+  }
+
+  return (undef, undef);
+}
+
+sub _fetchNearestUp {
+  my ($self,$genomic_interval) = @_;
+
+  my $interval_tree = $self->getIntervalTree($genomic_interval->chr,$genomic_interval->strand);
+  
+  if(defined $interval_tree) {
+    my $res = $interval_tree->fetch_nearest_up($genomic_interval->end);
+    my $dist = defined $res? ($res->start - $genomic_interval->end) : undef;
+    return ($res,$dist);
+  }
+
+  return (undef, undef);
+}
+
+
 =head1 PRIVATE METHODS
 
 =head2 getIntervalTree 
