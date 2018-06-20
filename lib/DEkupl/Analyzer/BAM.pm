@@ -51,6 +51,7 @@ my %flags = (
   SUPPLEMENTARY_ALIGNMENT => 2048,
 );
 
+# TODO Split this into function to be more testable!
 sub BUILD {
   my $self = shift;
   my $bam_it = DEkupl::Utils::bamFileIterator($self->bam_file);

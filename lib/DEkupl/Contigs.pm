@@ -16,7 +16,8 @@ has 'contigs_file' => (
 my @columns = (
   'tag',
   'nb_merged_kmers',
-  'assembly',
+  'contig',
+  'contig_size',
   'pvalue',
   'meanA',
   'meanB',
@@ -36,9 +37,9 @@ sub generateFasta {
   my $header = <$fhi>;
   while(<$fhi>) {
     chomp;
-    # nb_merged_kmers   assembly  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
+    # nb_merged_kmers   contig  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
     my $contig = _splitLine($_);
-    print $fho ">".$contig->{tag}."\n".$contig->{assembly},"\n";
+    print $fho ">".$contig->{tag}."\n".$contig->{contig},"\n";
   }
   close($fho);
   close($fhi);
@@ -53,6 +54,7 @@ sub loadContigsDB {
   while(<$fh>) {
     chomp;
     my $contig = _splitLine($_);
+    $contig->{contig_size} = length $contig->{contig};
     $contigs_db->saveContig($contig);
     # print STDERR "$i contigs loaded\n" if $i % 100 == 0;
     $i++;
@@ -81,13 +83,13 @@ sub getValues {
 sub _splitLine {
   my $line = shift;
 
-  # nb_merged_kmers   assembly  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
-  my ($nb_merged_kmers, $assembly, $tag, $pvalue, $meanA, $meanB, $log2FC, @counts) = split "\t", $line;
+  # nb_merged_kmers   contig  tag   pvalue   meanA   meanB   log2FC   sample1   sample2 ...
+  my ($nb_merged_kmers, $contig, $tag, $pvalue, $meanA, $meanB, $log2FC, @counts) = split "\t", $line;
 
   return {
       'tag' => $tag,
       'nb_merged_kmers' => $nb_merged_kmers,
-      'assembly' => $assembly,
+      'contig' => $contig,
       'pvalue' => $pvalue,
       'meanA' => $meanA,
       'meanB' => $meanB,
