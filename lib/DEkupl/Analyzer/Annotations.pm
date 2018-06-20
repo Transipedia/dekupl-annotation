@@ -79,13 +79,13 @@ sub BUILD {
         if(scalar @{$fwd_results} == 0) {
           # Query forward strand
           $query->strand('+');
-          my ($five_prim_result_fwd, $five_prim_dist_fwd) = $self->interval_query->fetchNearest5prim($query);
-          my ($three_prim_result_fwd, $three_prim_dist_fwd) = $self->interval_query->fetchNearest3prim($query);
+          my ($five_prim_result_fwd, $five_prim_dist_fwd) = $self->interval_query->_fetchNearestDown($query);
+          my ($three_prim_result_fwd, $three_prim_dist_fwd) = $self->interval_query->_fetchNearestUp($query);
 
           # Query reverse strand
           $query->strand('-');
-          my ($five_prim_result_rv, $five_prim_dist_rv) = $self->interval_query->fetchNearest5prim($query);
-          my ($three_prim_result_rv, $three_prim_dist_rv) = $self->interval_query->fetchNearest3prim($query);
+          my ($five_prim_result_rv, $five_prim_dist_rv) = $self->interval_query->_fetchNearestDown($query);
+          my ($three_prim_result_rv, $three_prim_dist_rv) = $self->interval_query->_fetchNearestUp($query);
 
           # Select the closest 5prim gene between the two strand
           # If both are defined we choose the closest
