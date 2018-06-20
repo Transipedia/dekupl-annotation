@@ -18,14 +18,18 @@ has 'interval_query' => (
 my @columns = (
   'gene_id',
   'gene_symbol',
+  'gene_strand',
   'gene_biotype',
   'as_gene_id',
   'as_gene_symbol',
+  'as_gene_strand',
   'as_gene_biotype',
   '5p_gene_id',
+  '5p_gene_strand',
   '5p_gene_symbol',
   '5p_gene_dist',
   '3p_gene_id',
+  '3p_gene_strand',
   '3p_gene_symbol',
   '3p_gene_dist',
   'exonic',
@@ -137,10 +141,12 @@ sub BUILD {
           if($res_type eq 'DEkupl::Annotations::Gene') {
             if($strand eq 'fwd') {
               $contig->{gene_id} = $res->id;
+              $contig->{gene_strand} = $res->strand;
               $contig->{gene_symbol} = $res->symbol;
               $contig->{gene_biotype} = $res->biotype;
             } elsif($strand eq '5prim') {
               $contig->{as_gene_id} = $res->id;
+              $contig->{as_gene_strand} = $res->strand;
               $contig->{as_gene_symbol} = $res->symbol;
               $contig->{as_gene_biotype} = $res->biotype;
             }
@@ -168,6 +174,7 @@ sub BUILD {
           $five_prim_result = $five_prim_result->gene;
         }
         $contig->{'5p_gene_id'}     = $five_prim_result->id;
+        $contig->{'5p_gene_strand'} = $five_prim_result->strand;
         $contig->{'5p_gene_symbol'} = $five_prim_result->symbol;
         $contig->{'5p_gene_dist'}   = $five_prim_dist;
       }
@@ -179,6 +186,7 @@ sub BUILD {
           $three_prim_result = $three_prim_result->gene;
         }
         $contig->{'3p_gene_id'}     = $three_prim_result->id;
+        $contig->{'3p_gene_strand'} = $three_prim_result->strand;
         $contig->{'3p_gene_symbol'} = $three_prim_result->symbol;
         $contig->{'3p_gene_dist'}   = $three_prim_dist;
       }
