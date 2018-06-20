@@ -17,6 +17,31 @@ git clone https://gitlab.seq.one/workset/rankvar2.git && cd rankvar2
 dzil install --install-command 'cpanm .'
 ```
 
+## Ontology
+| Term            | Type  | Analyzer | Source       | Description                                          |
+| --------------- | ----- | -------- | ------------ | ---------------------------------------------------- |
+| tag             | Str   | Contigs  | contigs file | kmer of reference                                    |
+| nb_merged_kmers | Int   | Contigs  | contigs file | Number of k-mer merged to produce the contig         |
+| contig          | Str   | Contigs  | contigs file | Sequence of the contig                               |
+| contig_size     | Int   | Contigs  | contigs file | Size (in nucleotides) of the contig                  |
+| pvalue          | Float | Contigs  | contigs file | Pvalue statistics from dekupl-run                    |
+| meanA           | Float | Contigs  | contigs file | Average counts for condition A                       |
+| meanB           | Float | Contigs  | contigs file | Average counts for condition B                       |
+| log2FC          | Float | Contigs  | contigs file | Log2 Fold-Change between samples in condition A vs B |
+| is_mapped       | Bool  | Bam      | bam file     | Is the contig mapped to at least one location        |
+| nb_hit          | Int   | Bam      | bam file     | Number of alignment given for the contig             |
+| line_in_sam     | Int   | Bam      | bam file     | Line number in the SAM/BAM                           |
+| chromosome      | Str   | Bam      | bam file     | Chromosome                                           |
+| start           | Int   | Bam      | bam file     | Begining of the alignment on the reference           |
+| end             | Int   | Bam      | bam file     | End of the alignment on the reference                |
+| strand          | +/-   | Bam      | bam file     | Strand of the alignment (set to NA is not stranded)  |
+| nb_insertion    | Int   | Bam      | bam_file     | Number of insertions in the alignment (from cigar)   |
+| nb_deletion     | Int   | Bam      | bam_file     | Number of deletions in the alignment (from cigar)    |
+| nb_splice       | Int   | Bam      | bam_file     | Number of splices in the alignment (from cigar)      |
+| clipped_3p      | Bool  | Bam      | bam_file     | True if contig's 3prim is soft/hard clipped (from cigar)         |
+| clipped_5p      | Bool  | Bam      | bam_file     | True if contig's 5prim is soft/hard clipped (from cigar)         |
+
+
 
 ## Dev environnement
 
