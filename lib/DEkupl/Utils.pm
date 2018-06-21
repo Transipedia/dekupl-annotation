@@ -261,4 +261,22 @@ sub parseSAMLine {
   };
 }
 
+sub getAtomicGeneID {
+  my $gene_id = shift;
+  my ($atomic_gene_id, $version) = $gene_id =~ /^(\S+)\.(\d+)$/;
+  if(defined $atomic_gene_id && defined $version) {
+    return $atomic_gene_id;
+  }
+  return $gene_id;
+}
+
+sub parseEnsemblID {
+  my $ensembl_id = shift;
+  my ($type,$id) = $ensembl_id =~ /(\S+):(\S+)/;
+  if(defined $id) {
+    return ($type,$id);
+  }
+  return $ensembl_id;
+}
+
 1;

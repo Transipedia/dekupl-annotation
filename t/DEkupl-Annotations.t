@@ -33,7 +33,7 @@ use File::Temp;
 
   # Create a annotation object and load the GTF
   my $annotations = DEkupl::Annotations->new();
-  $annotations->loadFromFile($gtf_file->filename,'gtf');
+  $annotations->loadFromGTF($gtf_file->filename);
   is(scalar $annotations->allGenes,2);
   my $geneA = $annotations->getGene('geneA');
   is($geneA->start,9);

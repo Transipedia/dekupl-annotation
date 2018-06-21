@@ -51,14 +51,15 @@ dzil install --install-command 'cpanm .'
 | as_gene_symbol     | Str   | Annotations | gff_file     | Overlapping antisense gene symbol (from GFF Name field). Only defined if --stranded option.        |
 | as_gene_strand     | Char  | Annotations | gff_file     | Overlapping antisense gene strand (+/-). Only defined if --stranded option.                        |
 | as_gene_biotype    | Str   | Annotations | gff_file     | Overlapping antisense gene biotype (from GFF biotype field). Only defined if --stranded option.    |
-| 5p_gene_id         | Str   | Annotations | gff_file     | Nearest 5’ gene ID. Same strand if --stranded option, downstream otherwise.                        |
-| 5p_gene_symbol     | Str   | Annotations | gff_file     | Nearest 5’ gene symbol. Same strand if --stranded option, downstream otherwise.                    |
-| 5p_gene_strand     | Str   | Annotations | gff_file     | Nearest 5’ gene gene strand (+/-).                                                                 |
-| 3p_gene_id         | Str   | Annotations | gff_file     | Nearest 3’ gene ID. Same strand if --stranded option, upstream otherwise.                          |
-| 3p_gene_symbol     | Str   | Annotations | gff_file     | Nearest 3’ gene symbol. Same strand if --stranded option, upstream otherwise.                      |
-| 3p_gene_strand     | Str   | Annotations | gff_file     | Nearest 3’ gene gene strand (+/-).                                                                 |
+| 5p_gene_id         | Str   | Annotations | gff_file     | Nearest 5’ gene ID. Same strand if --stranded option, downstream otherwise.                       |
+| 5p_gene_symbol     | Str   | Annotations | gff_file     | Nearest 5’ gene symbol. Same strand if --stranded option, downstream otherwise.                   |
+| 5p_gene_strand     | Str   | Annotations | gff_file     | Nearest 5’ gene gene strand (+/-).                                                                |
+| 3p_gene_id         | Str   | Annotations | gff_file     | Nearest 3’ gene ID. Same strand if --stranded option, upstream otherwise.                         |
+| 3p_gene_symbol     | Str   | Annotations | gff_file     | Nearest 3’ gene symbol. Same strand if --stranded option, upstream otherwise.                     |
+| 3p_gene_strand     | Str   | Annotations | gff_file     | Nearest 3’ gene gene strand (+/-).                                                                |
 | exonic             | Bool  | Annotations | gff_file     | Overlap between an exon and the contig. Same strand if --stranded option, both strand otherwise.   |
 | intronic           | Bool  | Annotations | gff_file     | Overlap between an intron and the contig. Same strand if --stranded option, both strand otherwise. |
+| gene_is_diff       | Bool  | DEG         | DEGs_file    | The main annotated gene (gene_id ontology) is differantially expressed                             |
 
 ## Dev environnement
 

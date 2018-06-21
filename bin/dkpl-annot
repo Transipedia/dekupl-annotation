@@ -16,6 +16,7 @@ use DEkupl::IntervalQuery;
 
 use DEkupl::Analyzer::BAM;
 use DEkupl::Analyzer::Annotations;
+use DEkupl::Analyzer::DEG;
 
 =head1 SYNOPSIS
 
@@ -27,11 +28,16 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 
   -i,--index DIR      path to the index directory (created with dkplannot index)
 
-=head2 OPTIONAL ARGUMENTS
+=head2 INPUT/OUTPUT
 
   -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
+  -d,--deg FILE       {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
+
+=head2 OPTIONAL ARGUMENTS
+
   -t,--treads INT     number of threads
   -s,--stranded       RNA-Seq is strand-specific.
+  -p,--deg-padj       padj diff. gene threshold (default : 0.05)
   -h,--help           show this help message and exit
 
 =cut
@@ -40,13 +46,14 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 #                       directory from Dekupl-run result)
 
 my ($verbose,$man,$help);
-my ($contigs_file, $index_dir, $version);
+my ($contigs_file, $index_dir, $deg_file, $version);
 my $output_dir = "DEkupl_annotation";
 my $index_name = "GRCh38-chr22";
 my $nb_threads = 1;
 my $tmp_dir = "/tmp";
 my $debug = 1;
 my $is_stranded = 0;
+my $deg_padj_threshold = 0.05;
 
 GetOptions(
     "v|verbose"        => \$verbose,
@@ -56,9 +63,11 @@ GetOptions(
     #"c|contigs=s"      => \$contigs_file,
     "o|output=s"       => \$output_dir,
     "i|index=s"        => \$index_dir,
+    "d|deg=s"          => \$deg_file,
     # Options
     "t|threads=i"      => \$nb_threads,
     "s|stranded"       => \$is_stranded,
+    "p|deg-padj"       => \$deg_padj_threshold,
     "version"          => \$version,
 ) or pod2usage(-verbose => 1);
 
@@ -88,9 +97,12 @@ mkdir $output_dir;
 # that load the config file and check that everything is ok
 my $gff_file = "$index_dir/$index_name.gff.gz";
 my $gnsap_index_dir = "$index_dir/gsnap";
+my @analyzers;
 
 # Create contigs object
 my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file, is_stranded => $is_stranded);
+push @analyzers, $contigs;
+
 my $gsnap = DEkupl::GSNAP->new(
   index_dir => $gnsap_index_dir,
   index_name => $index_name,
@@ -129,7 +141,10 @@ my $bam_analyzer = DEkupl::Analyzer::BAM->new(
   bam_file => $bam_file,
   is_stranded => $is_stranded,
 );
+push @analyzers, $bam_analyzer;
 
+# TODO: We should do that in separate space, in order to unload annotations from
+# memory as soon as the annotation is done remove them after annotation.
 print STDERR "Loading annotations into memory\n";
 my $annotations = DEkupl::Annotations->new();
 $annotations->loadFromGFF($gff_file,'gff3');
@@ -144,8 +159,19 @@ my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
   interval_query => $interval_query,
   is_stranded => $is_stranded,
 );
+push @analyzers, $annot_analyzer;
 
-my @analyzers = ($contigs, $bam_analyzer, $annot_analyzer);
+# If we have DEG (Differentially expressed genes, we add appened information to the contigs)
+if(defined $deg_file) {
+  print STDERR "Adding DEG informations\n";
+  my $deg_analyzer = DEkupl::Analyzer::DEG->new(
+    contigs_db => $contigs_db,
+    deg_file => $deg_file,
+    is_stranded => $is_stranded,
+    max_padj => $deg_padj_threshold,
+  );
+  push @analyzers, $deg_analyzer;
+}
 
 # TODO we should print automatic headers with descriptions of each fields as
 # in the VCF format!!!

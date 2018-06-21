@@ -71,7 +71,8 @@ sub loadFromGFF {
     # We only consider exon annotations
     if(defined $gene_features{$annot->{feature}}) {
       # print STDERR ".JFCYKUIMLCJFVKBILOML.K\n";
-      $gene_id = $id;
+      $gene_id =  DEkupl::Utils::parseEnsemblID($id);
+
       my $gene_symbol = $annot->{attributes}->{Name};
 
       my $gene = $self->getGene($gene_id);
