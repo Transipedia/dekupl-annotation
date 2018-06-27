@@ -17,6 +17,7 @@ use DEkupl::IntervalQuery;
 use DEkupl::Analyzer::BAM;
 use DEkupl::Analyzer::Annotations;
 use DEkupl::Analyzer::DEG;
+use DEkupl::Analyzer::Switches;
 
 =head1 SYNOPSIS
 
@@ -38,6 +39,11 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
   -t,--treads INT     number of threads
   -s,--stranded       RNA-Seq is strand-specific.
   -p,--deg-padj       padj diff. gene threshold (default : 0.05)
+  --norm-gene-counts FILE 
+                      Normalized gene counts
+  --sample-conditions FILE 
+                      Sample conditions. First column is sample name,
+                      second column is sample condition)
   -h,--help           show this help message and exit
 
 =cut
@@ -47,6 +53,8 @@ dkpl-annot -i index_dir/ merged-diff-counts.tsv.gz
 
 my ($verbose,$man,$help);
 my ($contigs_file, $index_dir, $deg_file, $version);
+my $normalized_gene_counts_file;
+my $sample_conditions_file;
 my $output_dir = "DEkupl_annotation";
 my $index_name = "GRCh38-chr22";
 my $nb_threads = 1;
@@ -64,6 +72,8 @@ GetOptions(
     "o|output=s"       => \$output_dir,
     "i|index=s"        => \$index_dir,
     "d|deg=s"          => \$deg_file,
+    "norm-gene-counts=s" => \$normalized_gene_counts_file,
+    "sample-conditions=s" => \$sample_conditions_file,
     # Options
     "t|threads=i"      => \$nb_threads,
     "s|stranded"       => \$is_stranded,
@@ -103,6 +113,12 @@ my @analyzers;
 my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file, is_stranded => $is_stranded);
 push @analyzers, $contigs;
 
+## DEBUG PRINT
+# foreach my $sample ($contigs->all_samples) {
+#   print STDERR "$sample\n";
+# }
+# sleep 10;
+
 my $gsnap = DEkupl::GSNAP->new(
   index_dir => $gnsap_index_dir,
   index_name => $index_name,
@@ -117,7 +133,6 @@ if(-e $fasta_file && $debug) {
   print STDERR "Generating FASTA file\n";
 $contigs->generateFasta($fasta_file);
 }
-
 
 # Generate BAM file
 my $bam_file = "$output_dir/contigs.bam";
@@ -172,6 +187,20 @@ if(defined $deg_file) {
   );
   push @analyzers, $deg_analyzer;
 }
+
+if(defined $normalized_gene_counts_file && defined $sample_conditions_file) {
+  print STDERR "Computing switches\n";
+  my @sample_names = $contigs->all_samples;
+  my $switches_analyzer = DEkupl::Analyzer::Switches->new(
+    contigs_db => $contigs_db,
+    is_stranded => $is_stranded,
+    sample_names => \@sample_names,
+    normalized_gene_counts_file => $normalized_gene_counts_file,
+    sample_conditions_file => $sample_conditions_file,
+  );
+  push @analyzers, $switches_analyzer;
+}
+
 
 # TODO we should print automatic headers with descriptions of each fields as
 # in the VCF format!!!

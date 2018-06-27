@@ -13,6 +13,15 @@ has 'contigs_file' => (
   required => 1,
 );
 
+has 'sample_names' => (
+  is => 'rw',
+  isa => 'ArrayRef[Str]',
+  traits => ['Array'],
+  handles => {
+    all_samples => 'elements',
+  },
+);
+
 my @columns = (
   'tag',
   'nb_merged_kmers',
@@ -24,10 +33,23 @@ my @columns = (
   'log2FC'
 );
 
-# sub BUILD {
-#   my $self = shift;
-#   # Load contigs?
-# }
+sub BUILD {
+  my $self = shift;
+  my $fh = DEkupl::Utils::getReadingFileHandle($self->contigs_file);
+  my $header = <$fh>;
+
+  chomp $header;
+  my $info =  _splitLine($header);
+
+  # Load sample names
+  my @samples;
+  foreach my $s (@{$info->{counts}}) {
+    push @samples, $s;
+  }
+  $self->sample_names(\@samples);
+
+  close($fh);
+}
 
 sub generateFasta {
   my $self = shift;
@@ -50,6 +72,7 @@ sub loadContigsDB {
   my $contigs_db = shift;
   my $fh = DEkupl::Utils::getReadingFileHandle($self->contigs_file);
   my $header = <$fh>;
+
   my $i = 0;
   while(<$fh>) {
     chomp;
