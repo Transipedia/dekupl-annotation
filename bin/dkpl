@@ -1,0 +1,41 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Pod::Usage;
+
+=head1 SYNOPSIS
+
+dkpl <command>
+
+Availables commands:
+
+   index: Create indexes for a genomes (used by dkpl-run and dkpl-annot)
+     run: Execute de DEkupl pipeline to identify condition-specific contigs
+   annot: Annotate contigs from DEkupl run
+
+=cut
+
+my $command = shift;
+
+my %commands = (
+  'index' => 'Index',
+  'annot' => 'Annot',
+  'run'   => 'Run',
+);
+
+pod2usage(-verbose => 1) if !defined $command;
+pod2usage(-verbose => 1, -message => "Invalid command") if !defined $commands{$command};
+
+my $app_name = 'DEkupl::App::'.$commands{$command};
+load_module($app_name);
+
+my $app = $app_name->new();
+
+sub load_module {
+  for (@_) {
+    (my $file = "$_.pm") =~ s{::}{/}g;
+    require $file;
+  }
+}

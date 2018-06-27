@@ -193,6 +193,7 @@ sub getFileIterator {
       chomp $line;
       # We parse the line with the appropriate methd
       my $parsed_line = $parsing_method->($line,@parsing_arguments);
+      $parsed_line->{_original_line} = $line;
 
       $curr_pos = tell($fh);
       $line = <$fh>; # Get next line
@@ -277,6 +278,35 @@ sub parseEnsemblID {
     return ($type,$id);
   }
   return $ensembl_id;
+}
+
+sub fastaFileIterator {
+  my $file = shift;
+
+  # Get file handle for $file
+  my $fh = getReadingFileHandle($file);
+
+  # Read prev line for FASTA because we dont know the number
+  # of line used for the sequence
+  my $prev_line = <$fh>;
+  chomp $prev_line;
+  return sub {
+    my ($name,$seq,$qual);
+    if(defined $prev_line) {
+      ($name) = $prev_line =~ />(.*)$/;
+      $prev_line = <$fh>;
+      # Until we find a new sequence identifier ">", we
+      # concatenate the lines corresponding to the sequence
+      while(defined $prev_line && $prev_line !~ /^>/) {
+        chomp $prev_line;
+        $seq .= $prev_line;
+        $prev_line = <$fh>;
+      }
+      return {name => $name, seq => $seq, qual => $qual};
+    } else {
+      return undef;
+    }
+  };
 }
 
 1;
