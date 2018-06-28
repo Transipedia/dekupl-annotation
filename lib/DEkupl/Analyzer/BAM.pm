@@ -13,6 +13,11 @@ has 'bam_file' => (
   required => 1,
 );
 
+has 'bed_file' => (
+  is => 'ro',
+  isa => 'Str'
+);
+
 my @columns = (
   'is_mapped',
   'line_in_sam',
@@ -51,6 +56,12 @@ my %flags = (
 sub BUILD {
   my $self = shift;
   my $bam_it = DEkupl::Utils::bamFileIterator($self->bam_file);
+
+  my $bed_fh;
+  if(defined $self->bed_file) {
+    $bed_fh = DEkupl::Utils::getWritingFileHandle($self->bed_file);
+  }
+
   my $i = 0;
   while(my $sam_line = $bam_it->()) {
 
@@ -103,8 +114,55 @@ sub BUILD {
     
     # Save contig
     $self->contigs_db->saveContig($contig);
+
+
+    # Print bed_line
+    #chr1    16141   16171   LineInSam=13156;ID=AAGCAGGGAGTATCTGCACACAGGATGCCCA;nb_hit=9;nM=0;del=0;ins=0;clipped_5p=0;clipped_3p=1;pval=6.809e-03;meanA=2;meanB=7;log2FC=1.93       1       -       16141   16171   75,75,255       1       30      0
+    my %name_fields = (
+      line_in_sam => $contig->{line_in_sam},
+      nb_hit      => $contig->{nb_hit},
+      NM          => $contig->{nb_mismatch},
+      del         => $contig->{nb_deletion},
+      ins         => $contig->{nb_insertion},
+      clipped_5p  => $contig->{clipped_5p},
+      clipped_3p  => $contig->{clipped_3p},
+      pval        => $contig->{pvalue},
+      meanA       => $contig->{meanA},
+      meanB       => $contig->{meanB},
+      log2FC      => $contig->{log2FC},
+    );
+    my @ordered_fields = qw(line_in_sam nb_hit NM del ins clipped_5p clipped_3p pval meanA meanB log2FC);
+
+    my $color = "0,0,0";
+    if(defined $contig->{strand}) {
+      if($contig->{strand} eq '+') {
+        $color = "255,0,0";
+      } else {
+        $color = "0,0,255";
+      }
+    }
+
+    if(defined $bed_fh) {
+      my $bed_line = join("\t",
+        $contig->{chromosome},
+        $contig->{start},
+        $contig->{end},
+        join(';', map { $_."=".$name_fields{$_} } @ordered_fields),
+        1,                                    # score
+        $contig->{strand},
+        $contig->{start},                     # thick-start
+        $contig->{end},                       # thick-end
+        $color,                               # itemRgb
+        $contig->{nb_splice},                 # blockCount
+        join(',',@{$cig_stats{block_sizes}}),  # blockSizes
+        join(',',@{$cig_stats{block_starts}}), # blockStarts
+      );
+      print $bed_fh $bed_line,"\n";
+    }
+
     $i++;
   }
+  close($bed_fh) if defined $bed_fh;
 }
 
 sub getHeaders {
@@ -150,9 +208,16 @@ sub _computeStatsFromCigar {
     $cig_stats{is_clipped_5p} = 1 if $cigar->[0]->{op} =~ /[SH]/;
     $cig_stats{is_clipped_3p} = 1 if $cigar->[$#{$cigar}]->{op} =~ /[SH]/; 
   }
+
+  my @block_starts;
+  my @block_sizes;
+
+  my $cur_bloc_start = 0;
+  my $cur_block_size = 0;
      
   foreach my $cigel (@{$cigar}) {
     if($cigel->{op} =~ /[MX=]/ ) {
+      $cur_block_size               += $cigel->{nb};
       $cig_stats{ref_aln_length}    += $cigel->{nb};
       $cig_stats{query_aln_length}  += $cigel->{nb};
       $cig_stats{nb_match}          += $cigel->{nb};
@@ -162,14 +227,26 @@ sub _computeStatsFromCigar {
     } elsif($cigel->{op} eq 'N') {
       $cig_stats{nb_splice}         += 1;
       $cig_stats{ref_aln_length}    += $cigel->{nb};
+      push @block_starts, $cur_bloc_start;
+      push @block_sizes, $cur_block_size;
+      $cur_block_size = 0;
+      $cur_bloc_start = $cig_stats{ref_aln_length};
     } elsif($cigel->{op} eq 'D') {
       $cig_stats{nb_deletion}       += 1;
       $cig_stats{ref_aln_length}    += $cigel->{nb};
+      $cur_block_size               += $cigel->{nb};
     }
   }
+
+  push @block_starts, $cur_bloc_start;
+  push @block_sizes, $cur_block_size;
+
+  $cig_stats{block_sizes} = \@block_sizes;
+  $cig_stats{block_starts} = \@block_starts;
   
   return \%cig_stats;
 }
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

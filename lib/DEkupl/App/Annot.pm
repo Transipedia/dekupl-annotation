@@ -113,10 +113,12 @@ sub BUILD {
   $contigs->loadContigsDB($contigs_db);
 
   print STDERR "Parsing BAM file\n";
+  my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
     contigs_db => $contigs_db,
     bam_file => $bam_file,
     is_stranded => $is_stranded,
+    bed_file => $bed_file,
   );
   push @analyzers, $bam_analyzer;
 
