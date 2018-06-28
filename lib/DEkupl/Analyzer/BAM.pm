@@ -149,13 +149,13 @@ sub BUILD {
         $contig->{end},
         join(';', map { $_."=".$name_fields{$_} } @ordered_fields),
         1,                                    # score
-        $contig->{strand},
+        defined $contig->{strand}? $contig->{strand} : '.',
         $contig->{start},                     # thick-start
         $contig->{end},                       # thick-end
         $color,                               # itemRgb
         $contig->{nb_splice},                 # blockCount
-        join(',',@{$cig_stats{block_sizes}}),  # blockSizes
-        join(',',@{$cig_stats{block_starts}}), # blockStarts
+        join(',', @{$cig_stats{block_sizes}}),  # blockSizes
+        join(',', @{$cig_stats{block_starts}}), # blockStarts
       );
       print $bed_fh $bed_line,"\n";
     }
@@ -241,8 +241,8 @@ sub _computeStatsFromCigar {
   push @block_starts, $cur_bloc_start;
   push @block_sizes, $cur_block_size;
 
-  $cig_stats{block_sizes} = \@block_sizes;
-  $cig_stats{block_starts} = \@block_starts;
+  $cig_stats{block_sizes}   = \@block_sizes;
+  $cig_stats{block_starts}  = \@block_starts;
   
   return \%cig_stats;
 }
