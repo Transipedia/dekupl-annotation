@@ -1,0 +1,15 @@
+language: perl
+perl:
+  - "5.24"
+addons:
+  apt:
+    packages:
+      - samtools
+      - gmap
+      - cpanminus
+      - libdist-zilla-perl
+install:
+  - dzil install --install-command 'cpanm .'
+script:
+  - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+  - dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz 
