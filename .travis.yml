@@ -13,11 +13,12 @@ addons:
       - r-base
 install:
   # Install latest gsnap version (with --gunzip support)
-  - echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty/" | sudo tee -a /etc/apt/sources.list
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-  - sudo apt-get update
-  - sudo apt-get -y install gmap
+  - wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2018-05-30.tar.gz
+  - tar -xzvf gmap-gsnap-2018-05-30.tar.gz
+  - pushd gmap-2018-05-30 && ./configure --prefix=/usr && make -j4 && sudo make install && popd
+  # Install R packages (DESeq2)
   - sudo Rscript install_r_packages.R
+  # Install dkpl-annot with Dist-zilla and CPAN-minus
   - dzil install --install-command 'cpanm .'
 script:
   - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
