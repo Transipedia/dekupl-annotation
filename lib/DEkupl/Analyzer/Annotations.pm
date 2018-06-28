@@ -24,14 +24,14 @@ my @columns = (
   'as_gene_symbol',
   'as_gene_strand',
   'as_gene_biotype',
-  '5p_gene_id',
-  '5p_gene_strand',
-  '5p_gene_symbol',
-  '5p_gene_dist',
-  '3p_gene_id',
-  '3p_gene_strand',
-  '3p_gene_symbol',
-  '3p_gene_dist',
+  'upstream_gene_id',
+  'upstream_gene_strand',
+  'upstream_gene_symbol',
+  'upstream_gene_dist',
+  'downstream_gene_id',
+  'downstream_gene_strand',
+  'downstream_gene_symbol',
+  'downstream_gene_dist',
   'exonic',
   'intronic',
 );
@@ -46,7 +46,7 @@ sub BUILD {
     if($contig->{is_mapped}) {
 
       my ($fwd_results,$rv_results);
-      my ($five_prim_result, $five_prim_dist, $three_prim_result, $three_prim_dist);
+      my ($upstream_result, $upstream_dist, $downstream_result, $downstream_dist);
 
       my $query = DEkupl::GenomicInterval->new(
           chr => $contig->{chromosome},
@@ -61,8 +61,8 @@ sub BUILD {
 
         # If we have no results on the contig regions, we try to find the nearset neighbors.
         if(scalar @{$fwd_results} == 0) {
-          ($five_prim_result,$five_prim_dist)   = $self->interval_query->fetchNearest5prim($query);
-          ($three_prim_result,$three_prim_dist) = $self->interval_query->fetchNearest3prim($query);
+          ($upstream_result,$upstream_dist)   = $self->interval_query->fetchNearest5prim($query);
+          ($downstream_result,$downstream_dist) = $self->interval_query->fetchNearest3prim($query);
         }
         
         # Set RV results with contig reverse strand
@@ -83,42 +83,42 @@ sub BUILD {
         if(scalar @{$fwd_results} == 0) {
           # Query forward strand
           $query->strand('+');
-          my ($five_prim_result_fwd, $five_prim_dist_fwd) = $self->interval_query->_fetchNearestDown($query);
-          my ($three_prim_result_fwd, $three_prim_dist_fwd) = $self->interval_query->_fetchNearestUp($query);
+          my ($upstream_result_fwd, $upstream_dist_fwd) = $self->interval_query->_fetchNearestDown($query);
+          my ($downstream_result_fwd, $downstream_dist_fwd) = $self->interval_query->_fetchNearestUp($query);
 
           # Query reverse strand
           $query->strand('-');
-          my ($five_prim_result_rv, $five_prim_dist_rv) = $self->interval_query->_fetchNearestDown($query);
-          my ($three_prim_result_rv, $three_prim_dist_rv) = $self->interval_query->_fetchNearestUp($query);
+          my ($upstream_result_rv, $upstream_dist_rv) = $self->interval_query->_fetchNearestDown($query);
+          my ($downstream_result_rv, $downstream_dist_rv) = $self->interval_query->_fetchNearestUp($query);
 
           # Select the closest 5prim gene between the two strand
           # If both are defined we choose the closest
           # Otherwise we chose the one that is defined
-          if(defined $five_prim_result_fwd && defined $five_prim_result_rv) { 
-            if($five_prim_dist_fwd < $five_prim_dist_rv) {
-              ($five_prim_result,$five_prim_dist) = ($five_prim_result_fwd, $five_prim_dist_fwd);
+          if(defined $upstream_result_fwd && defined $upstream_result_rv) { 
+            if($upstream_dist_fwd < $upstream_dist_rv) {
+              ($upstream_result,$upstream_dist) = ($upstream_result_fwd, $upstream_dist_fwd);
             } else {
-              ($five_prim_result,$five_prim_dist) = ($five_prim_result_rv, $five_prim_dist_rv);
+              ($upstream_result,$upstream_dist) = ($upstream_result_rv, $upstream_dist_rv);
             }
-          } elsif(defined $five_prim_result_fwd) {
-            ($five_prim_result,$five_prim_dist) = ($five_prim_result_fwd, $five_prim_dist_fwd);
-          } elsif(defined $five_prim_result_rv) {
-            ($five_prim_result,$five_prim_dist) = ($five_prim_result_rv, $five_prim_dist_rv);
+          } elsif(defined $upstream_result_fwd) {
+            ($upstream_result,$upstream_dist) = ($upstream_result_fwd, $upstream_dist_fwd);
+          } elsif(defined $upstream_result_rv) {
+            ($upstream_result,$upstream_dist) = ($upstream_result_rv, $upstream_dist_rv);
           }
           
           # Select the closest 3prim gene between the two strand
           # If both are defined we choose the closest
           # Otherwise we chose the one that is defined
-          if(defined $three_prim_result_fwd && defined $three_prim_result_rv) {
-            if($three_prim_dist_fwd < $three_prim_dist_rv) {
-              ($three_prim_result,$three_prim_dist) = ($three_prim_result_fwd, $three_prim_dist_fwd);
+          if(defined $downstream_result_fwd && defined $downstream_result_rv) {
+            if($downstream_dist_fwd < $downstream_dist_rv) {
+              ($downstream_result,$downstream_dist) = ($downstream_result_fwd, $downstream_dist_fwd);
             } else {
-              ($three_prim_result,$three_prim_dist) = ($three_prim_result_rv, $three_prim_dist_rv);
+              ($downstream_result,$downstream_dist) = ($downstream_result_rv, $downstream_dist_rv);
             }
-          } elsif(defined $three_prim_result_fwd) {
-            ($three_prim_result,$three_prim_dist) = ($three_prim_result_fwd, $three_prim_dist_fwd);
-          } elsif(defined $three_prim_result_rv) {
-            ($three_prim_result,$three_prim_dist) = ($three_prim_result_rv, $three_prim_dist_rv);
+          } elsif(defined $downstream_result_fwd) {
+            ($downstream_result,$downstream_dist) = ($downstream_result_fwd, $downstream_dist_fwd);
+          } elsif(defined $downstream_result_rv) {
+            ($downstream_result,$downstream_dist) = ($downstream_result_rv, $downstream_dist_rv);
           }
         }
 
@@ -168,27 +168,27 @@ sub BUILD {
       $contig->{intronic} = DEkupl::Utils::booleanEncoding($intronic);
 
       # Set 5prim annotations
-      if(defined $five_prim_result) {
+      if(defined $upstream_result) {
         # If we have match an exon, we get the gene object
-        if(ref($five_prim_result) eq 'DEkupl::Annotations::Exon') {
-          $five_prim_result = $five_prim_result->gene;
+        if(ref($upstream_result) eq 'DEkupl::Annotations::Exon') {
+          $upstream_result = $upstream_result->gene;
         }
-        $contig->{'5p_gene_id'}     = $five_prim_result->id;
-        $contig->{'5p_gene_strand'} = $five_prim_result->strand;
-        $contig->{'5p_gene_symbol'} = $five_prim_result->symbol;
-        $contig->{'5p_gene_dist'}   = $five_prim_dist;
+        $contig->{'upstream_gene_id'}     = $upstream_result->id;
+        $contig->{'upstream_gene_strand'} = $upstream_result->strand;
+        $contig->{'upstream_gene_symbol'} = $upstream_result->symbol;
+        $contig->{'upstream_gene_dist'}   = $upstream_dist;
       }
 
       # Set 3prim annotations
-      if(defined $three_prim_result) {
+      if(defined $downstream_result) {
         # If we have match an exon, we get the gene object
-        if(ref($three_prim_result) eq 'DEkupl::Annotations::Exon') {
-          $three_prim_result = $three_prim_result->gene;
+        if(ref($downstream_result) eq 'DEkupl::Annotations::Exon') {
+          $downstream_result = $downstream_result->gene;
         }
-        $contig->{'3p_gene_id'}     = $three_prim_result->id;
-        $contig->{'3p_gene_strand'} = $three_prim_result->strand;
-        $contig->{'3p_gene_symbol'} = $three_prim_result->symbol;
-        $contig->{'3p_gene_dist'}   = $three_prim_dist;
+        $contig->{'downstream_gene_id'}     = $downstream_result->id;
+        $contig->{'downstream_gene_strand'} = $downstream_result->strand;
+        $contig->{'downstream_gene_symbol'} = $downstream_result->symbol;
+        $contig->{'downstream_gene_dist'}   = $downstream_dist;
       }
 
       # Save contig
