@@ -33,7 +33,7 @@ sub generateBam {
   my $fata_input_file = shift;
   my $output_file = shift;
 
-  my $logs = File::Temp->new();
+  my $logs = File::Temp->new(UNLINK => 0, SUFFIX => '.log');
   print STDERR "GSNAP logs are located in $logs\n";
 
   my $command = join(" ",
@@ -45,15 +45,16 @@ sub generateBam {
     #"-w 50000", # -w, --localsplicedist=INT            Definition of local novel splicing event (default 200000)
     "--gunzip", # Uncompress gzipped input files
     $fata_input_file,
-    #"2> $logs",
-    "| samtools view -bh", # Convert output SAM to BAM format with samtools
+    "2> $logs",
+    "| samtools view -bh >", # Convert output SAM to BAM format with samtools
     $output_file
   );
 
   print STDERR "Executing GSNAP\nCommand: $command\n",
   
-  # TODO verify that the execution of GSNAP ended well
-  system($command);
+  # run GSNAP verify that the execution of GSNAP ended well
+  system($command) == 0 or die("GSNAP alignement failed, see logs in $logs");
+  unlink $logs;
 }
 
 no Moose;
