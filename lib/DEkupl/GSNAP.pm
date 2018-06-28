@@ -34,7 +34,6 @@ sub generateBam {
   my $output_file = shift;
 
   my $logs = File::Temp->new();
-  print STDERR "Executing GSNAP\nCommand: $command\n",
   print STDERR "GSNAP logs are located in $logs\n";
 
   my $command = join(" ",
@@ -50,6 +49,8 @@ sub generateBam {
     "| samtools view -bh >", # Convert output SAM to BAM format with samtools
     $output_file
   );
+
+  print STDERR "Executing GSNAP\nCommand: $command\n",
   
   system($command);
 }
