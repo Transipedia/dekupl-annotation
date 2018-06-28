@@ -2,6 +2,7 @@ package DEkupl::GSNAP;
 # ABSTRACT: Run GSNAP Aligner
 
 use Moose;
+use File::Temp;
 
 has 'index_dir' => (
   is => 'ro',
@@ -32,6 +33,10 @@ sub generateBam {
   my $fata_input_file = shift;
   my $output_file = shift;
 
+  my $logs = File::Temp->new();
+  print STDERR "Executing GSNAP\nCommand: $command\n",
+  print STDERR "GSNAP logs are located in $logs\n";
+
   my $command = join(" ",
     "gsnap -t ", $self->nb_threads,
     "-A sam", # -A, --format=STRING            Another format type, other than default.
@@ -41,11 +46,11 @@ sub generateBam {
     #"-w 50000", # -w, --localsplicedist=INT            Definition of local novel splicing event (default 200000)
     "--gunzip", # Uncompress gzipped input files
     $fata_input_file,
+    "2> $logs",
     "| samtools view -bh >", # Convert output SAM to BAM format with samtools
     $output_file
   );
-
-  print STDERR "Executing GSNAP\nCommand: $command\n",
+  
   system($command);
 }
 
