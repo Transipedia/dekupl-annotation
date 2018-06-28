@@ -4,6 +4,7 @@ perl:
 addons:
   apt:
     packages:
+      - zlib1g-dev
       - samtools
       - gmap
       - cpanminus

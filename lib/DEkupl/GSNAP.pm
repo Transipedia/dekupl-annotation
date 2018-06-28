@@ -46,12 +46,13 @@ sub generateBam {
     "--gunzip", # Uncompress gzipped input files
     $fata_input_file,
     #"2> $logs",
-    "| samtools view -bh - -o", # Convert output SAM to BAM format with samtools
+    "| samtools view -bh", # Convert output SAM to BAM format with samtools
     $output_file
   );
 
   print STDERR "Executing GSNAP\nCommand: $command\n",
   
+  # TODO verify that the execution of GSNAP ended well
   system($command);
 }
 
