@@ -74,78 +74,37 @@ sub BUILD {
     $contig->{cigar} = $sam_line->{original_cigar};
 
     # Set strand if we are in 'strand-specific' mode
-    if($self->is_stranded) {
-      my $strand;
-      if($sam_line->{flag} & $flags{REVERSE_COMPLEMENTED}) {
-        $strand = '-';
-      } else {
-        $strand = '+';
-      }
-      $contig->{strand} = $strand;
-    }
+    $contig->{strand} = _getStrandFromFlag($sam_line->{flag}, $self->is_stranded);
 
     # Compute alignment length from cigar
     # Extracting information from CIGAR element
-    my $ref_aln_length = 0;   # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
-    my $query_aln_length = 0; # Length of the alignment on the query (including deletion)
-    my $nb_match = 0;
-    my $nb_insertion = 0;     # Number of insertion in the query (I cigar element)
-    my $nb_deletion = 0;      # Number of deletiong in the query (D cigar element)
-    my $nb_splice = 0;        # Number of splice in the query (N cigar element)
-    foreach my $cigel (@{$sam_line->{cigar}}) {
-      if($cigel->{op} =~ /[MX=]/ ) {
-        $ref_aln_length += $cigel->{nb};
-        $query_aln_length += $cigel->{nb};
-        $nb_match += $cigel->{nb};
-      } elsif($cigel->{op} eq 'I') {
-        $nb_insertion++;
-        $query_aln_length += $cigel->{nb};
-      } elsif($cigel->{op} eq 'N') {
-        $nb_splice++;
-        $ref_aln_length += $cigel->{nb};
-      } elsif($cigel->{op} eq 'D') {
-        $nb_deletion++;
-        $ref_aln_length += $cigel->{nb};
-      }
-    }
+    my %cig_stats = %{_computeStatsFromCigar($sam_line->{cigar})};
 
-    $contig->{nb_insertion} = $nb_insertion;
-    $contig->{nb_deletion} = $nb_deletion; 
-    $contig->{nb_splice} = $nb_splice;
-    $contig->{end} = $sam_line->{pos} + $ref_aln_length - 1;
-
-    # Check if alignment is clipped (Hard or Soft)
-    my $clipped_5p = 0;
-    my $clipped_3p = 0;
-    if(@{$sam_line->{cigar}} > 1) {
-      $clipped_5p = 1 if $sam_line->{cigar}->[0]->{op} =~ /[SH]/;
-      $clipped_3p = 1 if $sam_line->{cigar}->[$#{$sam_line->{cigar}}]->{op} =~ /[SH]/; 
-    }
-    $contig->{clipped_3p} = DEkupl::Utils::booleanEncoding($clipped_3p);
-    $contig->{clipped_5p} = DEkupl::Utils::booleanEncoding($clipped_5p);
+    $contig->{nb_insertion} = $cig_stats{nb_insertion};
+    $contig->{nb_deletion}  = $cig_stats{nb_deletion}; 
+    $contig->{nb_splice}    = $cig_stats{nb_splice};
+    $contig->{end}          = $sam_line->{pos} + $cig_stats{ref_aln_length} - 1;
+    $contig->{clipped_3p}   = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_3p});
+    $contig->{clipped_5p}   = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_5p});
 
     # Compute the query cover (fraction of based aligned)
     # As in BLAST
-    my $query_cover = $query_aln_length / length($sam_line->{seq});
-    $contig->{query_cover} = $query_cover;
-    
+    $contig->{query_cover}  = $cig_stats{query_aln_length} / length($sam_line->{seq});
 
     # Extracting information from extented SAM fields
-    my $nb_hit = $sam_line->{extended_fields}->{NH};
+    my $nb_hit      = $sam_line->{extended_fields}->{NH};
     my $nb_mismatch = $sam_line->{extended_fields}->{NM};
     
-    $contig->{nb_hit} = $nb_hit if defined $nb_hit;
-    $contig->{nb_mismatch} = $nb_mismatch if defined $nb_mismatch;
+    $contig->{nb_hit}       = $nb_hit if defined $nb_hit;
+    $contig->{nb_mismatch}  = $nb_mismatch if defined $nb_mismatch;
 
     # Compute alignemnt identity
-    my $alignment_identity = ($nb_match - $nb_mismatch) / $query_aln_length;
-    $contig->{alignment_identity} = $alignment_identity;
+    $contig->{alignment_identity} = ($cig_stats{nb_match} - $nb_mismatch) / $cig_stats{query_aln_length};
     
     # Save contig
     $self->contigs_db->saveContig($contig);
     $i++;
   }
-  # Load contigs?
 }
 
 sub getHeaders {
@@ -160,12 +119,57 @@ sub getValues {
   return @values;
 }
 
-# sub _isFlagged {
-#   my $value = shift;
-#   my $flag = shift;
-#   return $value & $flag;
-# }
+sub _getStrandFromFlag {
+  my $flag        = shift;
+  my $is_stranded = shift;
+  my $strand;
+  if($is_stranded) {
+    if($flag & $flags{REVERSE_COMPLEMENTED}) {
+      $strand = '-';
+    } else {
+      $strand = '+';
+    }
+  }
+  return $strand;
+}
 
+sub _computeStatsFromCigar {
+  my $cigar = shift;
+  my %cig_stats = (
+    ref_aln_length    => 0, # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
+    query_aln_length  => 0, # Length of the alignment on the query (including deletion)
+    nb_match          => 0,
+    nb_insertion      => 0, # Number of insertion in the query (I cigar element)
+    nb_deletion       => 0, # Number of deletiong in the query (D cigar element)
+    nb_splice         => 0, # Number of splice in the query (N cigar element),
+    is_clipped_5p     => 0,
+    is_clipped_3p     => 0,
+  );
+
+  if(@{$cigar} > 1) {
+    $cig_stats{is_clipped_5p} = 1 if $cigar->[0]->{op} =~ /[SH]/;
+    $cig_stats{is_clipped_3p} = 1 if $cigar->[$#{$cigar}]->{op} =~ /[SH]/; 
+  }
+     
+  foreach my $cigel (@{$cigar}) {
+    if($cigel->{op} =~ /[MX=]/ ) {
+      $cig_stats{ref_aln_length}    += $cigel->{nb};
+      $cig_stats{query_aln_length}  += $cigel->{nb};
+      $cig_stats{nb_match}          += $cigel->{nb};
+    } elsif($cigel->{op} eq 'I') {
+      $cig_stats{nb_insertion}      += 1;
+      $cig_stats{query_aln_length}  += $cigel->{nb};
+    } elsif($cigel->{op} eq 'N') {
+      $cig_stats{nb_splice}         += 1;
+      $cig_stats{ref_aln_length}    += $cigel->{nb};
+    } elsif($cigel->{op} eq 'D') {
+      $cig_stats{nb_deletion}       += 1;
+      $cig_stats{ref_aln_length}    += $cigel->{nb};
+    }
+  }
+  
+  return \%cig_stats;
+}
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
