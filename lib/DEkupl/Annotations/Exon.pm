@@ -8,9 +8,9 @@ extends 'DEkupl::GenomicInterval';
 use DEkupl::Annotations::Gene;
 
 has gene  => (
-  is        => 'ro',
+  is        => 'rw',
   isa       => 'DEkupl::Annotations::Gene',
-  required  => 1,
+  #required  => 1,
   trigger   => sub {
     my $self = shift;
     $self->gene->addExon($self);

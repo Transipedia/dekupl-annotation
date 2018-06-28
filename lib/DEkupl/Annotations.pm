@@ -58,20 +58,31 @@ sub loadFromGFF {
   # Now we read the annotations and load them into memory
   my $gff_it = DEkupl::Utils::gffFileIterator($gtf_file,'gff3');
 
-  # We supposed that GFF are corectly sorted
-  # First genes, then mRNA, then exons
+  # Store links between IDs and Parents
+  my %id_to_parents;
+  my @exons;
+
   my $gene_id;
   while(my $annot = $gff_it->()) {
 
     print STDERR "Loading annotations from chr ".$annot->{chr}."...\n" if($annot->{feature} eq 'chromosome');
 
     my $id = $annot->{attributes}->{ID};
+    $id = DEkupl::Utils::parseEnsemblID($id) if defined $id;
+    my $parent = $annot->{attributes}->{Parent};
+    $parent = DEkupl::Utils::parseEnsemblID($parent) if defined $parent;
+
+    # Add the id to parent relationship
+    if(defined $parent && defined $id) {
+      # Todo we should only store that information fore transcript_id to gene_id
+      $id_to_parents{$id} = $parent;
+    }
     # next if !defined $id;
 
     # We only consider exon annotations
     if(defined $gene_features{$annot->{feature}}) {
       # print STDERR ".JFCYKUIMLCJFVKBILOML.K\n";
-      $gene_id =  DEkupl::Utils::parseEnsemblID($id);
+      $gene_id = $id;
 
       my $gene_symbol = $annot->{attributes}->{Name};
 
@@ -91,25 +102,32 @@ sub loadFromGFF {
       }
     }
 
-    # print STDERR "TATA $gene_id for exon\n";
-
-    # print STDERR "TOTO ".$annot->{feature}."\n";
-
     if($annot->{feature} eq 'exon') {
-      # print STDERR "Get gene $gene_id for exon\n";
-
-      my $gene = $self->getGene($gene_id);
-
-      # print STDERR "ADDing exon to gene ".$gene->id."\n";
 
       # The exon adds itself to the gene
       my $exon = DEkupl::Annotations::Exon->new(
         start     => $annot->{start} - 1,
         end       => $annot->{end} - 1,
-        gene      => $gene,
-        # transcripts => [$annot->{attributes}->{Parent}],
-        transcripts => [],
+        #gene      => $gene,
+        transcripts => [$parent],
+        #transcripts => [],
       );
+      push @exons, $exon;
+    }
+  }
+
+  # Now we associate exons with genes;
+  foreach my $exon (@exons) {
+    my @transcripts = $exon->allTranscripts;
+    if(scalar @transcripts > 0) {
+      my $transcript_id = $transcripts[0];
+      my $gene_id = $id_to_parents{$transcript_id};
+      if(defined $gene_id) {
+        my $gene = $self->getGene($gene_id);
+        if(defined $gene) {
+          $exon->gene($gene);
+        }
+      }
     }
   }
 }
