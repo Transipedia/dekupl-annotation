@@ -34,6 +34,7 @@ dzil install --install-command 'cpanm .'
 | start              | Int   | Bam         | bam                            | Begining of the alignment on the reference                                                         |
 | end                | Int   | Bam         | bam                            | End of the alignment on the reference                                                              |
 | strand             | Char  | Bam         | bam                            | Strand of the alignment (+/-). set to NA is unstranded data.                                       |
+| cigar              | Str   | Bam         | bam                            | CIGAR string from the SAM alignment.                                                               |
 | nb_insertion       | Int   | Bam         | bam                            | Number of insertions in the alignment (from cigar)                                                 |
 | nb_deletion        | Int   | Bam         | bam                            | Number of deletions in the alignment (from cigar)                                                  |
 | nb_splice          | Int   | Bam         | bam                            | Number of splices in the alignment (from cigar)                                                    |

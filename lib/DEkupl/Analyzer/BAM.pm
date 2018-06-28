@@ -20,6 +20,7 @@ my @columns = (
   'start',
   'end',
   'strand',
+  'cigar',
   'nb_insertion',
   'nb_deletion',
   'nb_splice',
@@ -70,6 +71,7 @@ sub BUILD {
 
     $contig->{chromosome} = $sam_line->{rname};
     $contig->{start} = $sam_line->{pos};
+    $contig->{cigar} = $sam_line->{original_cigar};
 
     # Set strand if we are in 'strand-specific' mode
     if($self->is_stranded) {
@@ -145,7 +147,6 @@ sub BUILD {
   }
   # Load contigs?
 }
-
 
 sub getHeaders {
   my $self = shift;
