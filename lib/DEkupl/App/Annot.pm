@@ -198,17 +198,18 @@ Options:
 
   Input/Output:
       -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
-      -d,--deg FILE       {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
+      -d,--deg FILE       (Optional) {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
+      --norm-gene-counts FILE 
+                          (Optional) Normalized gene counts
+      --sample-conditions FILE 
+                          (Optional) Sample conditions. First column is sample name,
+                          second column is sample condition)
 
   Optional Arguments:
-      -t,--treads INT     number of threads
+      -t,--threads INT    Number of threads (for GSNAP)
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
-      --norm-gene-counts FILE 
-                          Normalized gene counts
-      --sample-conditions FILE 
-                          Sample conditions. First column is sample name,
-                          second column is sample condition)
+
       -h,--help           show this help message and exit
 END
 

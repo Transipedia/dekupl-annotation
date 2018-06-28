@@ -2,7 +2,64 @@
 
 DE-kupl annotation is part of the DE-kupl package, and performs annotations of DE contigs identified by DE-kupl.
 
-## Installation
+## Usage
+
+### Creating the index
+
+To use DEkupl Annotation, you first need to build an index directory, that will prepare all
+the file for annotation.
+
+Required file are a genome as a multi-FASTA and annotations in a GFF3 format. Both
+of this file can be downloaded from [Ensembl](https://www.ensembl.org/info/data/ftp/index.html).
+
+Input files can be gzipped.
+
+The following command with create the index under the `index_dir` directory.
+
+```
+dkpl index -g genome.fasta -a annotations.gff3 -i index_dir
+```
+
+### Annotating contigs
+
+Once an index has been constructed you can annotate contigs from a DEkupl-run. 
+The minimal input to run DEkupl-annotation is the contigs file 
+(merged-diff-counts.tsv.gz) produced by DEkupl-run.
+
+```
+dkpl annot -i index_dir merged-diff-counts.tsv.gz
+```
+
+Output files will be placed under the `DEkupl_annotation` directory unless you specify
+another output directory with `-o` option.
+
+Extra file can be supplied to complete the annotation process (see ontolgy table) :
+
+* differentially expressed genes (`--deg`) for DEG analyzer
+* nomarlized gene counts (`--norm-gene-counts`) and sample conditions (`--sample-conditions`) for Switches analyzer.
+
+### Tutorial & toys
+
+Toy files are available with this repository to test dkpl-annot.
+
+```
+dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz--norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv
+```
+
+
+### Installation
+
+### Required dependencies
+
+* bash (version >= 4.3.46)
+* R (version >= version 3.2.3) with libraries DESeq2
+* GSNAP (version >= 2016-11-07)
+* samtools (version >= 1.3)
+
+### Install from the sources
+
+#### Install Dependancies
 
 Dependencies are cpan-minus (aka cpanm) and Dist::Zilla :
 
@@ -10,14 +67,30 @@ Dependencies are cpan-minus (aka cpanm) and Dist::Zilla :
 apt-get install cpanminus libdist-zilla-perl
 ```
 
-The install rankvar with dzil and cpanm.
+#### Global install
+
+The following command, will clone the repository and install dkpl-annot globaly with dzil and cpanm.
 
 ```
-git clone https://gitlab.seq.one/workset/rankvar2.git && cd rankvar2
+git clone https://github.com/Transipedia/dekupl-annotation.git && cd dekupl-annotation
 dzil install --install-command 'cpanm .'
 ```
 
+#### Local install
+
+For local install you need to use the `-l LOCAL_DIR` parameter of cpanm.
+Then you need to make sure that the Perl library that have been installed locally
+are available to the path using the `PERL5LIB` environnement variable. 
+
+For example :
+
+```
+dzil install --install-command 'cpanm -l $HOME/.local .'
+export PERL5LIB=$HOME/.local/lib:$PERL5LIB
+```
+
 ## Ontology
+
 | Term               | Type  | Analyzer    | File Source                    | Description                                                                                        |
 | ------------------ | ----- | ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------- |
 | tag                | Str   | Contigs     | contigs                        | kmer of reference                                                                                  |
