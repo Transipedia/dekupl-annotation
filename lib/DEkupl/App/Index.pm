@@ -6,6 +6,7 @@ use Getopt::Long;
 use File::Temp qw/ tempdir /;
 
 use DEkupl;
+use DEkupl::Annotations;
 use DEkupl::Genome;
 
 
@@ -89,35 +90,59 @@ sub BUILD {
   my $nb_genes = 0;
   my $nb_exons = 0;
   my $nb_matching_ref = 0;
+  my $nb_gene_names = 0;
+  my $nb_gene_biotype = 0;
+  my %missing_ref;
+  my %ids; # in order to verify that each gene ID is uniq!
   while(my $annot = $gff_it->()) {
+
     # TODO Check that the sorting is okay
     # Sort by gene!!!
     if($genome->hasReference($annot->{chr})) {
       $nb_matching_ref++;
-      if($annot->{feature} eq 'gene') {
+      if(defined $DEkupl::Annotations::gene_features{$annot->{feature}}) {
+        my $id = $annot->{attributes}->{ID};
+        if(defined $id) {
+          if(defined $ids{$id}) {
+            die "ERROR: Duplicated gene ID ($id) in GFF annotations";
+          }
+          $ids{$id} = 1;
+        }
         $nb_genes++;
+        $nb_gene_names++ if defined $annot->{attributes}->{Name};
+        $nb_gene_biotype++ if defined $annot->{attributes}->{biotype};
       } elsif($annot->{feature} eq 'exon') {
         $nb_exons++;
       }
+      # Print any line that match the FASTA references set
       print $index_gff_fh $annot->{_original_line},"\n";
     } else {
-      print STDERR "Missing reference sequence ". $annot->{chr} . " in the genome\n";
+      if(!defined $missing_ref{$annot->{chr}}) {
+        print STDERR "Missing reference sequence ". $annot->{chr} . " in the genome\n";
+      }
+      $missing_ref{$annot->{chr}} = 1;
     }
   }
   close($index_gff_fh);
+
+  die "ERROR: No gene feature found in GFF file" if $nb_genes == 0;
+  die "ERROR: Reference sequences between genome (FASTA) and annotations (GFF) are not matching" if $nb_matching_ref == 0;
+
   print STDERR "Found $nb_genes genes, and $nb_exons exons.\n";
+  print STDERR "No gene symbol found ('Name' attribute in GFF)\n" if $nb_gene_names == 0;
+  print STDERR "No gene biotype found ('biotype' attribute in GFF)\n" if $nb_gene_biotype == 0;
 
   # TODO print an info json file with version and stuff!!!
   my $gsnap_log = "$logs_dir/gsnap.log";
-  print STDERR "Creating GSNAP index (logs in $gnsap_log)\n";
-  system("gmap_build -D $index_dir -d gsnap --gunzip $index_fasta 2> $gsnap_log");
+  print STDERR "Creating GSNAP index (logs in $gsnap_log). This can take a while...\n";
+  system("gmap_build -D $index_dir -d gsnap --gunzip $index_fasta >> $gsnap_log 2>&1");
 }
 
 sub usage {
 
   my $usage =<<END;
 Usage:
-    dkpl indx -g gff_file -f genome.fasta [-t transcript.fa] -i index_dir
+    dkpl indx -g gff_file -f genome.fasta -i index_dir
 
   Options:
       -a,--annotations FILE   GFF annotation file

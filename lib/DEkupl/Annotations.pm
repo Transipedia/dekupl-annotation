@@ -30,7 +30,7 @@ has genes_hash => (
   },
 );
 
-my %gene_features = (
+our %gene_features = (
   'gene' => 'coding gene',
   'pseudogene' => 'pseudogene',
   'ncRNA_gene' => 'non_coding gene',
