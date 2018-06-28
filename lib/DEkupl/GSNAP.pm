@@ -45,8 +45,8 @@ sub generateBam {
     #"-w 50000", # -w, --localsplicedist=INT            Definition of local novel splicing event (default 200000)
     "--gunzip", # Uncompress gzipped input files
     $fata_input_file,
-    "2> $logs",
-    "| samtools view -bh >", # Convert output SAM to BAM format with samtools
+    #"2> $logs",
+    "| samtools view -bh - -o", # Convert output SAM to BAM format with samtools
     $output_file
   );
 
