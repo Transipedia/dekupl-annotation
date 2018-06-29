@@ -14,6 +14,11 @@ has 'interval_query' => (
   required => 1,
 );
 
+has 'loci_file' => (
+  is => 'ro',
+  isa => 'Str',
+);
+
 # TODO This should be a hash to auto generate the documentation!
 my @columns = (
   'gene_id',
@@ -40,6 +45,8 @@ sub BUILD {
   my $self = shift;
 
   my $contigs_it = $self->contigs_db->contigsIterator();
+
+  my %loci;
 
   while(my $contig = $contigs_it->()) {
 
@@ -191,10 +198,48 @@ sub BUILD {
         $contig->{'downstream_gene_dist'}   = $downstream_dist;
       }
 
+      # Adding locus inforamations to the loci hash
+      my ($locus_id, $locus_type) = _getLocusIdFromContig($contig);
+      my $locus = $loci{$locus_id};
+      # If the locus is already know we update its values
+      if(defined $locus) {
+        $locus->{best_pvalue} = $contig->{pvalue} if $contig->{pvalue} < $locus->{best_pvalue};
+        $locus->{best_log2FC} = $contig->{log2FC} if abs($contig->{log2FC}) > abs($locus->{best_log2FC});
+        $locus->{start}       = $contig->{start}  if $contig->{start} < $locus->{start};
+        $locus->{end}         = $contig->{end}    if $contig->{end} > $locus->{end};
+        $locus->{number_of_contigs}++;
+      # This is a new locus
+      } else {
+        $loci{$locus_id} = {
+          locus_id          => $locus_id,
+          gene_symbol       => $contig->{gene_symbol},
+          number_of_contigs => 1,
+          best_log2FC       => $contig->{log2FC},
+          best_pvalue       => $contig->{pvalue},
+          chromosome        => $contig->{chromosome},
+          start             => $contig->{start},
+          end               => $contig->{end},
+          strand            => $contig->{strand},
+          locus_type        => $locus_type,
+        };
+      }
+
       # Save contig
       $self->contigs_db->saveContig($contig);
     }
   }
+
+  # Print locus to loci files
+  my @loci_headers = qw(locus_id gene_symbol number_of_contigs best_log2FC best_pvalue chromosome start end strand locus_type);
+  if(defined $self->loci_file) {
+    my $loci_fh = DEkupl::Utils::getWritingFileHandle($self->loci_file) if defined $self->loci_file;
+    print $loci_fh join("\t", @loci_headers), "\n";
+    foreach my $locus (values %loci) {
+      print $loci_fh join("\t", map { defined $locus->{$_}? $locus->{$_} : $DEkupl::Utils::NA_value } @loci_headers), "\n";
+    }
+    
+  }
+
 }
 
 
@@ -208,6 +253,31 @@ sub getValues {
   my $contig = shift;
   my @values = map { defined $contig->{$_}? $contig->{$_} : $DEkupl::Utils::NA_value } @columns;
   return @values;
+}
+
+sub _getLocusIdFromContig {
+  my $contig = shift;
+  my $locus_id;
+  my $locus_type;
+
+  if(defined $contig->{gene_id}) {
+    $locus_id   = $contig->{gene_id};
+    $locus_type = 'genic';
+  } elsif(defined $contig->{as_gene_id}) {
+    $locus_id   = $contig->{as_gene_id};
+    $locus_type = 'antisense';
+  } else {
+    # chr9&-&ENSG00000177910.7&ENSG00000271923.1
+    $locus_id = join('&',
+      $contig->{chromosome},
+      defined $contig->{strand}? $contig->{strand} : $DEkupl::Utils::NA_value,
+      defined $contig->{downstream_gene_id}?  $contig->{downstream_gene_id} : $DEkupl::Utils::NA_value,
+      defined $contig->{upstream_gene_id}?    $contig->{upstream_gene_id}   : $DEkupl::Utils::NA_value,
+    );
+    $locus_type = 'intergenic';
+  }
+
+  return ($locus_id, $locus_type);
 }
 
 no Moose;

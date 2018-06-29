@@ -82,9 +82,9 @@ sub BUILD {
   push @analyzers, $contigs;
 
   my $gsnap = DEkupl::GSNAP->new(
-    index_dir => $index_dir,
-    index_name => "gsnap",
-    nb_threads => $nb_threads,
+    index_dir   => $index_dir,
+    index_name  => "gsnap",
+    nb_threads  => $nb_threads,
   );
 
   # Create FASTA file
@@ -115,10 +115,10 @@ sub BUILD {
   print STDERR "Parsing BAM file\n";
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
-    contigs_db => $contigs_db,
-    bam_file => $bam_file,
+    contigs_db  => $contigs_db,
+    bam_file    => $bam_file,
     is_stranded => $is_stranded,
-    bed_file => $bed_file,
+    bed_file    => $bed_file,
   );
   push @analyzers, $bam_analyzer;
 
@@ -133,10 +133,12 @@ sub BUILD {
   $interval_query->loadAnnotations($annotations);
 
   print STDERR "Annotating contigs\n";
+  my $loci_file = "$output_dir/ContigsPerLoci.tsv.gz";
   my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
-    contigs_db => $contigs_db,
-    interval_query => $interval_query,
-    is_stranded => $is_stranded,
+    contigs_db      => $contigs_db,
+    interval_query  => $interval_query,
+    is_stranded     => $is_stranded,
+    loci_file       => $loci_file,
   );
   push @analyzers, $annot_analyzer;
 
@@ -144,10 +146,10 @@ sub BUILD {
   if(defined $deg_file) {
     print STDERR "Adding DEG informations\n";
     my $deg_analyzer = DEkupl::Analyzer::DEG->new(
-      contigs_db => $contigs_db,
-      deg_file => $deg_file,
+      contigs_db  => $contigs_db,
+      deg_file    => $deg_file,
       is_stranded => $is_stranded,
-      max_padj => $deg_padj_threshold,
+      max_padj    => $deg_padj_threshold,
     );
     push @analyzers, $deg_analyzer;
   }
@@ -156,11 +158,11 @@ sub BUILD {
     print STDERR "Computing switches\n";
     my @sample_names = $contigs->all_samples;
     my $switches_analyzer = DEkupl::Analyzer::Switches->new(
-      contigs_db => $contigs_db,
-      is_stranded => $is_stranded,
-      sample_names => \@sample_names,
+      contigs_db                  => $contigs_db,
+      is_stranded                 => $is_stranded,
+      sample_names                => \@sample_names,
       normalized_gene_counts_file => $normalized_gene_counts_file,
-      sample_conditions_file => $sample_conditions_file,
+      sample_conditions_file      => $sample_conditions_file,
     );
     push @analyzers, $switches_analyzer;
   }

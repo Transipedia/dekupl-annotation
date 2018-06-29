@@ -47,7 +47,6 @@ dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.g
 dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
 ```
 
-
 ### Installation
 
 ### Required dependencies
@@ -88,6 +87,14 @@ For example :
 dzil install --install-command 'cpanm -l $HOME/.local .'
 export PERL5LIB=$HOME/.local/lib:$PERL5LIB
 ```
+
+## Output files
+
+- Table `DiffContigsInfos.tsv`, summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations.
+
+- BED `file diff_contigs.bed` for the visualization ; it contains useful informations from the summarization table. BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -).
+
+- Table `ContigsPerLoci.tsv`, contigs grouped by loci (genic, antisense, intergenic, unmapped). The locus ID for a genic/antisense locus is the Ensembl ID followed by the strand (separated by "&"). For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene, 3'-gene (separated by "&").
 
 ## Ontology
 
