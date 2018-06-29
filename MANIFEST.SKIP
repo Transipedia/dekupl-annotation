@@ -1,0 +1,6 @@
+# Makemaker trash files
+MANIFEST.SKIP
+
+^toy/
+^DEkupl_annotation
+^test_index
