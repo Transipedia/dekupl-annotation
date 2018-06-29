@@ -92,7 +92,7 @@ export PERL5LIB=$HOME/.local/lib:$PERL5LIB
 
 - Table `DiffContigsInfos.tsv`, summarizing for each contig, its location on the genome (if it's aligned), the neighborhood, the sequence alignment informations, and the differential expression informations.
 
-- BED `file diff_contigs.bed` for the visualization ; it contains useful informations from the summarization table. BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -).
+- BED file `diff_contigs.bed` for the visualization ; it contains useful informations from the summarization table. BED12 file of aligned contigs with GSNAP/Blast, with strand-specific color (red : strand + ; blue : strand -).
 
 - Table `ContigsPerLoci.tsv`, contigs grouped by loci (genic, antisense, intergenic, unmapped). The locus ID for a genic/antisense locus is the Ensembl ID followed by the strand (separated by "&"). For an intergenic locus, we have the concatenation of : chromosome, strand, 5'-gene, 3'-gene (separated by "&").
 
