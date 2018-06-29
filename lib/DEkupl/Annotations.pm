@@ -92,8 +92,8 @@ sub loadFromGFF {
           chr     => $annot->{chr},
           strand  => $annot->{strand},
           id      => $gene_id,
-          symbol  => $gene_symbol,
         );
+        $gene_info{symbol} = $gene_symbol if defined $gene_symbol;
         my $biotype = $annot->{attributes}->{biotype};
         $gene_info{biotype} = $biotype if defined $biotype;
         # If this gene is not defined yet, we create a new entry
