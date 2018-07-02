@@ -118,6 +118,7 @@ export PERL5LIB=$HOME/.local/lib:$PERL5LIB
 | nb_insertion            | Int   | Bam         | bam                            | Number of insertions in the alignment (from cigar)                                                 |
 | nb_deletion             | Int   | Bam         | bam                            | Number of deletions in the alignment (from cigar)                                                  |
 | nb_splice               | Int   | Bam         | bam                            | Number of splices in the alignment (from cigar)                                                    |
+| nb_snv                  | Bool  | Bam         | bam                            | Number of SNV in the contigs (computed as the number of mismatches minus indels)                   |
 | clipped_3p              | Bool  | Bam         | bam                            | Number of clipped bases (soft/hard) from 3prim contig                                              |
 | clipped_5p              | Bool  | Bam         | bam                            | Number of clipped bases (soft/hard) from 5prim contig                                              |
 | is_clipped_3p           | Bool  | Bam         | bam                            | True if contig's 3prim is soft/hard clipped (from cigar)                                           |

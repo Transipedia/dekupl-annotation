@@ -29,6 +29,8 @@ my @columns = (
   'nb_insertion',
   'nb_deletion',
   'nb_splice',
+  'nb_snv',
+  #'snv',
   'clipped_3p',
   'clipped_5p',
   'is_clipped_3p',
@@ -112,6 +114,14 @@ sub BUILD {
     
     $contig->{nb_hit}       = $nb_hit if defined $nb_hit;
     $contig->{nb_mismatch}  = $nb_mismatch if defined $nb_mismatch;
+
+    # Numbre of SNV is the number of mismatches without indels
+    $contig->{nb_snv} = defined $nb_mismatch? ($nb_mismatch - $contig->{nb_insertion} - $contig->{nb_deletion}) : 0;
+
+    # Keep SNV annotation for retro-compatibility
+    # Old rule was : if [[ $nb_mismatch -gt 0 ]] || [[ $nb_deletion -gt 0 ]] || [[ $nb_insertion -gt 0 ]];then SNV="T" ; else SNV="F";fi
+    #my $is_snv = (defined $nb_mismatch && $nb_mismatch > 0) || $contig->{nb_insertion} > 0 || $contig->{nb_deletion} > 0? 1 : 0;
+    #$contig->{snv} = DEkupl::Utils::booleanEncoding($is_snv);
 
     # Compute alignemnt identity
     $contig->{alignment_identity} = ($cig_stats{nb_match} - $nb_mismatch) / $cig_stats{query_aln_length};
