@@ -118,8 +118,10 @@ export PERL5LIB=$HOME/.local/lib:$PERL5LIB
 | nb_insertion            | Int   | Bam         | bam                            | Number of insertions in the alignment (from cigar)                                                 |
 | nb_deletion             | Int   | Bam         | bam                            | Number of deletions in the alignment (from cigar)                                                  |
 | nb_splice               | Int   | Bam         | bam                            | Number of splices in the alignment (from cigar)                                                    |
-| clipped_3p              | Bool  | Bam         | bam                            | True if contig's 3prim is soft/hard clipped (from cigar)                                           |
-| clipped_5p              | Bool  | Bam         | bam                            | True if contig's 5prim is soft/hard clipped (from cigar)                                           |
+| clipped_3p              | Bool  | Bam         | bam                            | Number of clipped bases (soft/hard) from 3prim contig                                              |
+| clipped_5p              | Bool  | Bam         | bam                            | Number of clipped bases (soft/hard) from 5prim contig                                              |
+| is_clipped_3p           | Bool  | Bam         | bam                            | True if contig's 3prim is soft/hard clipped (from cigar)                                           |
+| is_clipped_5p           | Bool  | Bam         | bam                            | True if contig's 5prim is soft/hard clipped (from cigar)                                           |
 | query_cover             | Float | Bam         | bam                            | Fraction of the query that have been aligned to the reference                                      |
 | alignment_identity      | Float | Bam         | bam                            | Fraction of exact match over the query alignment length (splices do not count)                     |
 | nb_hit                  | Int   | Bam         | bam                            | Number of alignment given for the contig (NH field)                                                |

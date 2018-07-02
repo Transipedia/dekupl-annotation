@@ -31,6 +31,8 @@ my @columns = (
   'nb_splice',
   'clipped_3p',
   'clipped_5p',
+  'is_clipped_3p',
+  'is_clipped_5p',
   'query_cover',
   'alignment_identity',
   'nb_hit',
@@ -89,14 +91,16 @@ sub BUILD {
 
     # Compute alignment length from cigar
     # Extracting information from CIGAR element
-    my %cig_stats = %{_computeStatsFromCigar($sam_line->{cigar})};
+    my %cig_stats = %{_computeStatsFromCigar($sam_line->{cigar}, $contig->{strand})};
 
-    $contig->{nb_insertion} = $cig_stats{nb_insertion};
-    $contig->{nb_deletion}  = $cig_stats{nb_deletion}; 
-    $contig->{nb_splice}    = $cig_stats{nb_splice};
-    $contig->{end}          = $sam_line->{pos} + $cig_stats{ref_aln_length} - 1;
-    $contig->{clipped_3p}   = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_3p});
-    $contig->{clipped_5p}   = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_5p});
+    $contig->{nb_insertion}   = $cig_stats{nb_insertion};
+    $contig->{nb_deletion}    = $cig_stats{nb_deletion}; 
+    $contig->{nb_splice}      = $cig_stats{nb_splice};
+    $contig->{end}            = $sam_line->{pos} + $cig_stats{ref_aln_length} - 1;
+    $contig->{clipped_3p}     = $cig_stats{clipped_3p};
+    $contig->{clipped_5p}     = $cig_stats{clipped_5p};
+    $contig->{is_clipped_3p}  = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_3p});
+    $contig->{is_clipped_5p}  = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_5p});
 
     # Compute the query cover (fraction of based aligned)
     # As in BLAST
@@ -192,7 +196,9 @@ sub _getStrandFromFlag {
 }
 
 sub _computeStatsFromCigar {
-  my $cigar = shift;
+  my $cigar       = shift;
+  my $strand      = shift;
+
   my %cig_stats = (
     ref_aln_length    => 0, # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
     query_aln_length  => 0, # Length of the alignment on the query (including deletion)
@@ -200,13 +206,24 @@ sub _computeStatsFromCigar {
     nb_insertion      => 0, # Number of insertion in the query (I cigar element)
     nb_deletion       => 0, # Number of deletiong in the query (D cigar element)
     nb_splice         => 0, # Number of splice in the query (N cigar element),
+    clipped_3p        => 0,
+    clipped_5p        => 0,
     is_clipped_5p     => 0,
     is_clipped_3p     => 0,
   );
 
   if(@{$cigar} > 1) {
-    $cig_stats{is_clipped_5p} = 1 if $cigar->[0]->{op} =~ /[SH]/;
-    $cig_stats{is_clipped_3p} = 1 if $cigar->[$#{$cigar}]->{op} =~ /[SH]/; 
+    $cig_stats{clipped_5p}  = $cigar->[0]->{nb}           if $cigar->[0]->{op} =~ /[SH]/;
+    $cig_stats{clipped_3p}  = $cigar->[$#{$cigar}]->{nb}  if $cigar->[$#{$cigar}]->{op} =~ /[SH]/;
+
+    # If we are on the reverse strand, we flip the 3p, 5p annotations
+    if(defined $strand && $strand eq '-') {
+      ($cig_stats{clipped_5p},$cig_stats{clipped_3p}) = ($cig_stats{clipped_3p},$cig_stats{clipped_5p});
+    }
+
+    # Set boolean values for clipping
+    $cig_stats{is_clipped_5p} = 1 if $cig_stats{clipped_5p} > 0;
+    $cig_stats{is_clipped_3p} = 1 if $cig_stats{clipped_3p} > 0;
   }
 
   my @block_starts;

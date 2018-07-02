@@ -8,6 +8,8 @@
 [ ] Génerer le tableau des ontologies automatiquement dans le README
 [ ] Ajouter les dernieres colonnes manquantes (voir fichier Drive)
 [ ] Afficher les headers dans le fichier output (comme un VCF)
+[ ] Ajouter une fonction "run" pour les analyzer
+[ ] AJoute des tests sur tout le fichier d'input pour vérifier leur format!
 [ ] Faire des tests pour GSNAP et SWitche afin de vérifier que les dépendances sont bien installées
     [ ] GSNAP
     [ ] Samtools
@@ -31,6 +33,9 @@
 ## Indexing
 
 [ ] Un seul index pour dekupl-annotation et dekupl-run
+    [ ] Génerer un fichier transcriptome.fa
+    [ ] Générer un index kallisto
+    [ ] Générer un fichier transcript_to_gene_mapping.tsv
 [x] On vérifie à la constriction de l'index que les fichier sont compatibles : 
     1. Mêmes références dans le GFF et le fasta
     2. Présence de features "gene"

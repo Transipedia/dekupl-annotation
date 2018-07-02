@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 10;
+use Test::More tests => 20;
 
 use DEkupl::Utils;
 use DEkupl::Analyzer::BAM;
@@ -12,7 +12,7 @@ my $parsed_sam_line = DEkupl::Utils::parseSAMLine($sam_line);
 is(DEkupl::Analyzer::BAM::_getStrandFromFlag(22,1),'-');
 is(DEkupl::Analyzer::BAM::_getStrandFromFlag(22),undef);
 
-my $cig_stats = DEkupl::Analyzer::BAM::_computeStatsFromCigar($parsed_sam_line->{cigar});
+my $cig_stats = DEkupl::Analyzer::BAM::_computeStatsFromCigar($parsed_sam_line->{cigar},'-');
 
 # my %cig_stats = (
 #     ref_aln_length    => 0, # Length of the alignment on the reference (from the first based aligned to the last, including deletion and splice)
@@ -31,5 +31,24 @@ is($cig_stats->{nb_match}, 48);
 is($cig_stats->{nb_insertion}, 1);
 is($cig_stats->{nb_deletion}, 0);
 is($cig_stats->{nb_splice}, 0);
-is($cig_stats->{is_clipped_5p}, 1);
-is($cig_stats->{is_clipped_3p}, 0);
+is($cig_stats->{is_clipped_5p}, 0);
+is($cig_stats->{is_clipped_3p}, 1);
+is($cig_stats->{clipped_3p}, 8);
+is($cig_stats->{clipped_5p}, 0);
+
+
+{
+  my $cig_stats = DEkupl::Analyzer::BAM::_computeStatsFromCigar($parsed_sam_line->{cigar},'+');
+  is($cig_stats->{is_clipped_5p}, 1);
+  is($cig_stats->{is_clipped_3p}, 0);
+  is($cig_stats->{clipped_3p}, 0);
+  is($cig_stats->{clipped_5p}, 8);
+}
+
+{
+  my $cig_stats = DEkupl::Analyzer::BAM::_computeStatsFromCigar($parsed_sam_line->{cigar});
+  is($cig_stats->{is_clipped_5p}, 1);
+  is($cig_stats->{is_clipped_3p}, 0);
+  is($cig_stats->{clipped_3p}, 0);
+  is($cig_stats->{clipped_5p}, 8);
+}
