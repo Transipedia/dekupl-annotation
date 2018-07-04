@@ -14,6 +14,16 @@ subtype 'Strand',
 
 our $NA_value = 'NA';
 
+# scale a a value x defined on a range [min,max] to the range [a,b]
+#
+#        (b-a)(x - min)
+# f(x) = --------------  + a
+#          max - min
+sub scaleValue {
+  my ($a,$b,$min,$max,$x) = @_;
+  return (($b-$a)*($x-$min))/($max-$min)+$a;
+}
+
 sub reverseStrand {
   my $strand = shift;
   if($strand eq '+') {

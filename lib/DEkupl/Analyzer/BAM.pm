@@ -18,6 +18,11 @@ has 'bed_file' => (
   isa => 'Str'
 );
 
+has 'contigs' => (
+  is => 'ro',
+  isa => 'DEkupl::Contigs',
+);
+
 my @columns = (
   'is_mapped',
   'line_in_sam',
@@ -147,13 +152,34 @@ sub BUILD {
     );
     my @ordered_fields = qw(line_in_sam nb_hit NM del ins clipped_5p clipped_3p pval meanA meanB log2FC);
 
-    my $color = "0,0,0";
+    my $color;
+    my $light_color = 220;
+    my $hard_color = 0;
+    
+    # Intensity is scaled on abs(log2FC). 
     if(defined $contig->{strand}) {
+      my $scaled_color = DEkupl::Utils::scaleValue($light_color,$hard_color,$self->contigs->min_abs_log2FC,$self->contigs->max_abs_log2FC,abs($contig->{log2FC}));
+      $scaled_color = int($scaled_color);
       if($contig->{strand} eq '+') {
-        $color = "255,0,0";
+        # Red
+        $color = join(',',
+          "255",
+          $scaled_color,
+          $scaled_color
+        );
       } else {
-        $color = "0,0,255";
+        # Blue
+        $color = join(',',
+          $scaled_color,
+          $scaled_color,
+          "255"
+        );
       }
+    } else {
+      my $scaled_color = DEkupl::Utils::scaleValue(190,0,$self->contigs->min_abs_log2FC,$self->contigs->max_abs_log2FC,abs($contig->{log2FC}));
+      $scaled_color = int($scaled_color);
+      # color gray
+      $color = join(',',$scaled_color,$scaled_color,$scaled_color);
     }
 
     if(defined $bed_fh) {

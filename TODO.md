@@ -7,9 +7,13 @@
 [ ] Ajouter un graphique sur l'architecture de DEkupl-annot
 [ ] Génerer le tableau des ontologies automatiquement dans le README
 [ ] Ajouter les dernieres colonnes manquantes (voir fichier Drive)
+    [ ] UTR
+    [ ] exon_coords
+    [ ] SNV
+    [ ] other-split
 [ ] Afficher les headers dans le fichier output (comme un VCF)
 [ ] Ajouter une fonction "run" pour les analyzer
-[ ] AJoute des tests sur tout le fichier d'input pour vérifier leur format!
+[ ] AJouter des tests sur tous les fichiers d'input pour vérifier leur format!
 [ ] Faire des tests pour GSNAP et SWitche afin de vérifier que les dépendances sont bien installées
     [ ] GSNAP
     [ ] Samtools

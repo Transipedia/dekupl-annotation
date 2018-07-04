@@ -22,6 +22,16 @@ has 'sample_names' => (
   },
 );
 
+has 'min_abs_log2FC' => (
+  is => 'rw',
+  isa => 'Num'
+);
+
+has 'max_abs_log2FC' => (
+  is => 'rw',
+  isa => 'Num'
+);
+
 my @columns = (
   'tag',
   'nb_merged_kmers',
@@ -74,14 +84,31 @@ sub loadContigsDB {
   my $header = <$fh>;
 
   my $i = 0;
+  my $min_abs_log2FC = 0;
+  my $max_abs_log2FC = 0;
+
   while(<$fh>) {
     chomp;
     my $contig = _splitLine($_);
     $contig->{contig_size} = length $contig->{contig};
     $contigs_db->saveContig($contig);
+    
+    # Setting min-max absoluted log2FC (used for coloring contigs)
+    my $abs_log2FC = abs($contig->{log2FC});
+    if(!defined $min_abs_log2FC) {
+      $min_abs_log2FC = $abs_log2FC;
+      $max_abs_log2FC = $abs_log2FC;
+    } else {
+      $min_abs_log2FC = $abs_log2FC if $abs_log2FC < $min_abs_log2FC;
+      $max_abs_log2FC = $abs_log2FC if $abs_log2FC > $max_abs_log2FC;
+    }
+    
     # print STDERR "$i contigs loaded\n" if $i % 100 == 0;
     $i++;
   }
+
+  $self->min_abs_log2FC($min_abs_log2FC);
+  $self->max_abs_log2FC($max_abs_log2FC);
   
   close($fh);
 }
