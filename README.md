@@ -85,7 +85,7 @@ For example :
 
 ```
 dzil install --install-command 'cpanm -l $HOME/.local .'
-export PERL5LIB=$HOME/.local/lib:$PERL5LIB
+export PERL5LIB=$HOME/.local/lib/perl5:$PERL5LIB
 ```
 
 ## Output files
