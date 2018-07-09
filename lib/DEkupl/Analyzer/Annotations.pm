@@ -3,6 +3,8 @@ package DEkupl::Analyzer::Annotations;
 
 use Moose;
 
+use List::Util qw(min max);
+
 use DEkupl::Utils;
 
 with 'DEkupl::Analyzer';
@@ -90,12 +92,12 @@ sub BUILD {
         if(scalar @{$fwd_results} == 0) {
           # Query forward strand
           $query->strand('+');
-          my ($upstream_result_fwd, $upstream_dist_fwd) = $self->interval_query->_fetchNearestDown($query);
+          my ($upstream_result_fwd, $upstream_dist_fwd)     = $self->interval_query->_fetchNearestDown($query);
           my ($downstream_result_fwd, $downstream_dist_fwd) = $self->interval_query->_fetchNearestUp($query);
 
           # Query reverse strand
           $query->strand('-');
-          my ($upstream_result_rv, $upstream_dist_rv) = $self->interval_query->_fetchNearestDown($query);
+          my ($upstream_result_rv, $upstream_dist_rv)     = $self->interval_query->_fetchNearestDown($query);
           my ($downstream_result_rv, $downstream_dist_rv) = $self->interval_query->_fetchNearestUp($query);
 
           # Select the closest 5prim gene between the two strand
@@ -133,46 +135,79 @@ sub BUILD {
         $rv_results = [];
       }
 
-      my $exonic = 0;
-      my $intronic;
-
+      # TODO we should refactor this procedure as follow :
+      # 1. Reconstruct candidates genes by assembling exons and genes into an object
+      # called "Candidate" that has specific methods
+      # 2. Create a method to compare 2 candidate and select the best one!
+      # TODO add testing for that feature!!
       foreach my $strand (('fwd','rv')) {
+        # Get the right results array
         my @results = $strand eq 'fwd'? @{$fwd_results} : @{$rv_results};
+        # This will be set to 1 if we encounter an exon feature
+        my $exonic = 0;
+        my $intronic;
+        my $exonic_overlap_length;
+        my $current_gene;
 
         foreach my $res (@results) {
           my $res_type = ref($res);
-
           # TODO we should do a special treatment when there is multiple genes overlapping
           # the position. Usually we should choose the one that is 'protein_coding' over
           # a non_conding gene!
           if($res_type eq 'DEkupl::Annotations::Gene') {
-            if($strand eq 'fwd') {
-              $contig->{gene_id} = $res->id;
-              $contig->{gene_strand} = $res->strand;
-              $contig->{gene_symbol} = $res->symbol;
-              $contig->{gene_biotype} = $res->biotype;
-            } elsif($strand eq '5prim') {
-              $contig->{as_gene_id} = $res->id;
-              $contig->{as_gene_strand} = $res->strand;
-              $contig->{as_gene_symbol} = $res->symbol;
-              $contig->{as_gene_biotype} = $res->biotype;
+            # We do not override possible exonic overlapping genes
+            if(!$exonic) {
+              if($strand eq 'fwd') {
+                _setContigGeneInfo($contig,$res);
+              } elsif($strand eq 'rv') {
+                _setContigGeneInfo($contig,$res,'as');
+              }
+              $current_gene = $res;
             }
           } elsif($res_type eq 'DEkupl::Annotations::Exon') {
-            $exonic = 1;
-            # The contig overlap the exon and the intron
-            if ($query->start < $res->start || $query->end > $res->end) {
-              $intronic = 1;
-            } elsif(!defined $intronic) {
-              $intronic = 0;
+            # Genes with exons overlap take over non-exonic gene annotations
+            # If multiple exons are overlapping, we take the one with the largest
+            # overlapping length
+            my $overlap = min($res->end,$query->end) - max($res->start,$query->start) + 1;
+            if(!defined $exonic_overlap_length || $overlap > $exonic_overlap_length) {
+              $exonic_overlap_length = $overlap;
+              if($strand eq 'fwd') {
+                _setContigGeneInfo($contig,$res->gene);
+              } elsif($strand eq 'rv') {
+                _setContigGeneInfo($contig,$res->gene,'as');
+              }
+              # The contig overlap the exon and the intron (only for fwd annotation)
+              $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+              $current_gene = $res->gene;
+            # Both candidates have the same overlapping length, we select the one with the longer gene length
+            } elsif(defined $exonic_overlap_length && $overlap == $exonic_overlap_length) {
+              # Selelect the longest gene
+              if($res->gene->length > $current_gene->length) {
+                if($strand eq 'fwd') {
+                  _setContigGeneInfo($contig,$res->gene);                  
+                } elsif($strand eq 'rv') {
+                  _setContigGeneInfo($contig,$res->gene,'as');
+                }
+                # The contig overlap the exon and the intron (only for fwd annotation)
+                $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+                $current_gene = $res->gene;
+              }
             }
+            $exonic = 1;
           }
+        }
+
+        $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
+
+        # Exonic/intronic information is only defined for fwd annotaitons
+        # For unstranded data, all candidates are merged into the fwd array.
+        if($strand eq 'fwd') {
+          $contig->{exonic}   = DEkupl::Utils::booleanEncoding($exonic);
+          $contig->{intronic} = DEkupl::Utils::booleanEncoding($intronic);
         }
       }
 
-      $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
-
-      $contig->{exonic}   = DEkupl::Utils::booleanEncoding($exonic);
-      $contig->{intronic} = DEkupl::Utils::booleanEncoding($intronic);
+      
 
       # Set 5prim annotations
       if(defined $upstream_result) {
@@ -180,9 +215,7 @@ sub BUILD {
         if(ref($upstream_result) eq 'DEkupl::Annotations::Exon') {
           $upstream_result = $upstream_result->gene;
         }
-        $contig->{'upstream_gene_id'}     = $upstream_result->id;
-        $contig->{'upstream_gene_strand'} = $upstream_result->strand;
-        $contig->{'upstream_gene_symbol'} = $upstream_result->symbol;
+        _setContigGeneInfo($contig,$upstream_result,'upstream');
         $contig->{'upstream_gene_dist'}   = $upstream_dist;
       }
 
@@ -192,9 +225,7 @@ sub BUILD {
         if(ref($downstream_result) eq 'DEkupl::Annotations::Exon') {
           $downstream_result = $downstream_result->gene;
         }
-        $contig->{'downstream_gene_id'}     = $downstream_result->id;
-        $contig->{'downstream_gene_strand'} = $downstream_result->strand;
-        $contig->{'downstream_gene_symbol'} = $downstream_result->symbol;
+        _setContigGeneInfo($contig,$downstream_result,'downstream');
         $contig->{'downstream_gene_dist'}   = $downstream_dist;
       }
 
@@ -237,11 +268,8 @@ sub BUILD {
     foreach my $locus (values %loci) {
       print $loci_fh join("\t", map { defined $locus->{$_}? $locus->{$_} : $DEkupl::Utils::NA_value } @loci_headers), "\n";
     }
-    
   }
-
 }
-
 
 sub getHeaders {
   my $self = shift;
@@ -278,6 +306,21 @@ sub _getLocusIdFromContig {
   }
 
   return ($locus_id, $locus_type);
+}
+
+sub _setContigGeneInfo {
+  my $contig  = shift;
+  my $gene    = shift;
+  my $type    = shift;
+  my $prefix = "gene_";
+  if(defined $type) {
+    $prefix = $type.'_'.$prefix;
+  }
+  $prefix = "" unless defined $prefix;
+  $contig->{$prefix."id"}      = $gene->id;
+  $contig->{$prefix."strand"}  = $gene->strand;
+  $contig->{$prefix."symbol"}  = $gene->symbol;
+  $contig->{$prefix."biotype"} = $gene->biotype;
 }
 
 no Moose;
