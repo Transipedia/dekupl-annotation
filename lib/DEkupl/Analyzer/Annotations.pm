@@ -135,79 +135,24 @@ sub BUILD {
         $rv_results = [];
       }
 
-      # TODO we should refactor this procedure as follow :
-      # 1. Reconstruct candidates genes by assembling exons and genes into an object
-      # called "Candidate" that has specific methods
-      # 2. Create a method to compare 2 candidate and select the best one!
-      # TODO add testing for that feature!!
+      # Select the best gene candidate for each strand
       foreach my $strand (('fwd','rv')) {
         # Get the right results array
         my @results = $strand eq 'fwd'? @{$fwd_results} : @{$rv_results};
-        # This will be set to 1 if we encounter an exon feature
-        my $exonic = 0;
-        my $intronic;
-        my $exonic_overlap_length;
-        my $current_gene;
 
-        foreach my $res (@results) {
-          my $res_type = ref($res);
-          # TODO we should do a special treatment when there is multiple genes overlapping
-          # the position. Usually we should choose the one that is 'protein_coding' over
-          # a non_conding gene!
-          if($res_type eq 'DEkupl::Annotations::Gene') {
-            # We do not override possible exonic overlapping genes
-            if(!$exonic) {
-              if($strand eq 'fwd') {
-                _setContigGeneInfo($contig,$res);
-              } elsif($strand eq 'rv') {
-                _setContigGeneInfo($contig,$res,'as');
-              }
-              $current_gene = $res;
-            }
-          } elsif($res_type eq 'DEkupl::Annotations::Exon') {
-            # Genes with exons overlap take over non-exonic gene annotations
-            # If multiple exons are overlapping, we take the one with the largest
-            # overlapping length
-            my $overlap = min($res->end,$query->end) - max($res->start,$query->start) + 1;
-            if(!defined $exonic_overlap_length || $overlap > $exonic_overlap_length) {
-              $exonic_overlap_length = $overlap;
-              if($strand eq 'fwd') {
-                _setContigGeneInfo($contig,$res->gene);
-              } elsif($strand eq 'rv') {
-                _setContigGeneInfo($contig,$res->gene,'as');
-              }
-              # The contig overlap the exon and the intron (only for fwd annotation)
-              $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
-              $current_gene = $res->gene;
-            # Both candidates have the same overlapping length, we select the one with the longer gene length
-            } elsif(defined $exonic_overlap_length && $overlap == $exonic_overlap_length) {
-              # Selelect the longest gene
-              if($res->gene->length > $current_gene->length) {
-                if($strand eq 'fwd') {
-                  _setContigGeneInfo($contig,$res->gene);                  
-                } elsif($strand eq 'rv') {
-                  _setContigGeneInfo($contig,$res->gene,'as');
-                }
-                # The contig overlap the exon and the intron (only for fwd annotation)
-                $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
-                $current_gene = $res->gene;
-              }
-            }
-            $exonic = 1;
+        my $candidate = _selectBestCandidate(\@results, $query);
+
+        # We have found a candidate gene!
+        if(defined $candidate->{gene}) {
+          if($strand eq 'fwd') {
+            _setContigGeneInfo($contig,$candidate->{gene});
+            $contig->{exonic}   = DEkupl::Utils::booleanEncoding($candidate->{is_exonic});
+            $contig->{intronic} = DEkupl::Utils::booleanEncoding($candidate->{is_intronic});
+          } elsif($strand eq 'rv') {
+            _setContigGeneInfo($contig,$candidate->{gene},'as');
           }
         }
-
-        $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
-
-        # Exonic/intronic information is only defined for fwd annotaitons
-        # For unstranded data, all candidates are merged into the fwd array.
-        if($strand eq 'fwd') {
-          $contig->{exonic}   = DEkupl::Utils::booleanEncoding($exonic);
-          $contig->{intronic} = DEkupl::Utils::booleanEncoding($intronic);
-        }
       }
-
-      
 
       # Set 5prim annotations
       if(defined $upstream_result) {
@@ -321,6 +266,56 @@ sub _setContigGeneInfo {
   $contig->{$prefix."strand"}  = $gene->strand;
   $contig->{$prefix."symbol"}  = $gene->symbol;
   $contig->{$prefix."biotype"} = $gene->biotype;
+}
+
+sub _selectBestCandidate {
+  my $results = shift;
+  my $query   = shift;
+  my $exonic = 0;
+  my $intronic;
+  my $exonic_overlap_length;
+  my $current_gene;
+
+  foreach my $res (@{$results}) {
+    my $res_type = ref($res);
+    # TODO we should do a special treatment when there is multiple genes overlapping
+    # the position. Usually we should choose the one that is 'protein_coding' over
+    # a non_conding gene!
+    if($res_type eq 'DEkupl::Annotations::Gene') {
+      # We do not override possible exonic overlapping genes
+      if(!$exonic) {
+        $current_gene = $res;
+      }
+    } elsif($res_type eq 'DEkupl::Annotations::Exon') {
+      # Genes with exons overlap take over non-exonic gene annotations
+      # If multiple exons are overlapping, we take the one with the largest
+      # overlapping length
+      my $overlap = min($res->end,$query->end) - max($res->start,$query->start) + 1;
+      if(!defined $exonic_overlap_length || $overlap > $exonic_overlap_length) {
+        $exonic_overlap_length = $overlap;
+        # The contig overlap the exon and the intron (only for fwd annotation)
+        $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+        $current_gene = $res->gene;
+      # Both candidates have the same overlapping length, we select the one with the longer gene length
+      } elsif(defined $exonic_overlap_length && $overlap == $exonic_overlap_length) {
+        # Selelect the longest gene
+        if($res->gene->length > $current_gene->length) {
+          # The contig overlap the exon and the intron (only for fwd annotation)
+          $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+          $current_gene = $res->gene;
+        }
+      }
+      $exonic = 1;
+    }
+  }
+
+  $intronic = 1 if !defined $intronic; # We have found no exons, therefor we are fully intronic.
+
+  return {
+    'is_exonic' => $exonic,
+    'is_intronic' => $intronic,
+    'gene' => $current_gene,
+  };
 }
 
 no Moose;
