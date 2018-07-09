@@ -213,6 +213,8 @@ sub getHeaders {
 sub getValues {
   my $self = shift;
   my $contig = shift;
+  # Force is_mapped property to be "FALSE" and not "NA" if the contig was not seen in the BAM.
+  $contig->{is_mapped} = DEkupl::Utils::booleanEncoding(0) if !defined $contig->{is_mapped};
   my @values = map { defined $contig->{$_}? $contig->{$_} : 'NA' } @columns;
   return @values;
 }
