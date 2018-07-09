@@ -18,6 +18,12 @@ has 'bed_file' => (
   isa => 'Str'
 );
 
+has 'contig_color_mode' => (
+  is => 'ro',
+  isa => 'Int',
+  default => 1,
+);
+
 has 'contigs' => (
   is => 'ro',
   isa => 'DEkupl::Contigs',
@@ -155,25 +161,30 @@ sub BUILD {
     my $color;
     my $light_color = 220;
     my $hard_color = 0;
+
+    # We switch the colors if contigs color mode is 2
+    if($self->contig_color_mode == 2) {
+      ($light_color,$hard_color) = ($hard_color,$light_color);
+    }
     
     # Intensity is scaled on abs(log2FC). 
     if(defined $contig->{strand}) {
       my $scaled_color = DEkupl::Utils::scaleValue($light_color,$hard_color,$self->contigs->min_abs_log2FC,$self->contigs->max_abs_log2FC,abs($contig->{log2FC}));
       $scaled_color = int($scaled_color);
+      my $blue_color  = join(',', $scaled_color, $scaled_color, "255");
+      my $red_color   = join(',', "255", $scaled_color, $scaled_color);
       if($contig->{strand} eq '+') {
-        # Red
-        $color = join(',',
-          "255",
-          $scaled_color,
-          $scaled_color
-        );
+        if($self->contig_color_mode == 2) {
+          $color = $blue_color;
+        } else {
+          $color = $red_color;
+        }
       } else {
-        # Blue
-        $color = join(',',
-          $scaled_color,
-          $scaled_color,
-          "255"
-        );
+        if($self->contig_color_mode == 2) {
+          $color = $red_color;
+        } else {
+          $color = $blue_color;
+        }
       }
     } else {
       my $scaled_color = DEkupl::Utils::scaleValue(190,0,$self->contigs->min_abs_log2FC,$self->contigs->max_abs_log2FC,abs($contig->{log2FC}));

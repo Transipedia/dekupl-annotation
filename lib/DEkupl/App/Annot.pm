@@ -31,6 +31,7 @@ sub BUILD {
   my $debug = 1;
   my $is_stranded = 0;
   my $deg_padj_threshold = 0.05;
+  my $contig_color_mode = 1;
 
   GetOptions(
       "help"             => \$help,
@@ -46,6 +47,7 @@ sub BUILD {
       "t|threads=i"      => \$nb_threads,
       "s|stranded"       => \$is_stranded,
       "p|deg-padj"       => \$deg_padj_threshold,
+      "contig-color=i"   => \$contig_color_mode,
       "version"          => \$version,
   ) or pod2usage(-verbose => 1);
 
@@ -66,6 +68,10 @@ sub BUILD {
   if(!defined $index_dir) {
     print STDERR "Missing index directory (-i,--index)\n";
     usage() && exit(1);
+  }
+
+  if($contig_color_mode != 1 && $contig_color_mode != 2) {
+    die "Invalid value for --contig-color option (must be 1 or 2)\n";
   }
 
   # Create output dir
@@ -115,11 +121,12 @@ sub BUILD {
   print STDERR "Parsing BAM file\n";
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
-    contigs     => $contigs,
-    contigs_db  => $contigs_db,
-    bam_file    => $bam_file,
-    is_stranded => $is_stranded,
-    bed_file    => $bed_file,
+    contigs           => $contigs,
+    contigs_db        => $contigs_db,
+    bam_file          => $bam_file,
+    is_stranded       => $is_stranded,
+    bed_file          => $bed_file,
+    contig_color_mode => $contig_color_mode,
   );
   push @analyzers, $bam_analyzer;
 
@@ -214,7 +221,9 @@ Options:
       -t,--threads INT    Number of threads (for GSNAP)
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
-
+      --contig-color INT  Contig color mode (default 1):
+                            1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
+		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
       -h,--help           show this help message and exit
 END
 
