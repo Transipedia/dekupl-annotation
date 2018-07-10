@@ -17,3 +17,9 @@ use DEkupl::Utils;
   $id = DEkupl::Utils::getAtomicGeneID('ENSG00000186092');
   is($id,'ENSG00000186092');
 }
+
+# check dependencies versions
+{
+  DEkupl::Utils::checkSamtoolsVersion();
+  DEkupl::Utils::checkGSNAPVersion();
+}

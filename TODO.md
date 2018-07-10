@@ -14,12 +14,13 @@
 [ ] Afficher les headers dans le fichier output (comme un VCF)
 [ ] Ajouter une fonction "run" pour les analyzer
 [ ] AJouter des tests sur tous les fichiers d'input pour vérifier leur format!
-[ ] Faire des tests pour GSNAP et SWitche afin de vérifier que les dépendances sont bien installées
-    [ ] GSNAP
-    [ ] Samtools
-    [ ] R & DESeq2
+[x] Faire des tests pour GSNAP et SWitche afin de vérifier que les dépendances sont bien installées
+    [x] GSNAP
+    [x] Samtools
+    [x] R & DESeq2
 [ ] Logs de GSNAP dans le dossier de résultats et pas un fichier temporaire
-[ ] Choix de l'annotations si plusieurs chevauchantes :
+    Idem pour DESeq2
+[x] Choix de l'annotations si plusieurs chevauchantes :
     1. exon over intron
     2. Taille du chevauchement
     3. Longeur du gène

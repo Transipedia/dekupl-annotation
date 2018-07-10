@@ -319,4 +319,51 @@ sub fastaFileIterator {
   };
 }
 
+=head2 isVersionGreaterOrEqual($v1,$v2)
+
+Return true is version number v1 is greater than v2
+
+=cut
+
+sub isVersionGreaterOrEqual($$) {
+  my ($v1,$v2) = @_;
+  my @v1_nums = split(/\./,$v1);
+  my @v2_nums = split(/\./,$v2);
+  for(my $i = 0; $i < @v1_nums; $i++) {
+    if($v1_nums[$i] >= $v2_nums[$i]) {
+      return 1;
+    }else {
+      return 0;
+    }
+  }
+  if(scalar @v2_nums > @v1_nums) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+sub checkSamtoolsVersion {
+  my $min_version = "1.3";
+  if(system("samtools --version > /dev/null") == 0) {
+    my ($version) = `samtools --version` =~ /samtools\s(\S+)/;
+    die "samtools version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
+    print STDERR "Using SAMtools version $version\n";
+  } else {
+    die "samtools is not acessible in the \$PATH";
+  }
+}
+
+sub checkGSNAPVersion {
+  my $min_version = "2016.11.07";
+  if(system("gsnap --version 2> /dev/null > /dev/null") == 0) {
+    my ($version) = `gsnap --version 2> /dev/null` =~ /version\s(\S+)/;
+    $version =~ s/-/\./;
+    die "gsnap version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
+    print STDERR "Using GSNAP version $version\n";
+  } else {
+    die "samtools is not acessible in the \$PATH";
+  }
+}
+
 1;

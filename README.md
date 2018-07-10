@@ -1,4 +1,4 @@
-# DE-kupl Annotation
+# DE-kupl Annotation [![Build Status](https://travis-ci.org/Transipedia/dekupl-annotation.svg?branch=new-version)](https://travis-ci.org/Transipedia/dekupl-annotation)
 
 DE-kupl annotation is part of the DE-kupl package, and performs annotations of DE contigs identified by DE-kupl.
 

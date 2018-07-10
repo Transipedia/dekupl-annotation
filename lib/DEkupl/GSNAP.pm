@@ -23,10 +23,11 @@ has 'nb_threads' => (
 );
 
 # TODO We should verify GSNAP index directory
-# sub BUILD {
-#   my $self = shift;
-#   # Load contigs?
-# }
+sub BUILD {
+  my $self = shift;
+  DEkupl::Utils::checkSamtoolsVersion();
+  DEkupl::Utils::checkGSNAPVersion();
+}
 
 sub generateBam {
   my $self = shift;
