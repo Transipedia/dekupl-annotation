@@ -40,6 +40,12 @@ sub BUILD {
 
   # TODO Verify that R is available as well as the packages we need.
   # TODO Split this into functions and test them!
+  my $check_log = new File::Temp(SUFFIX => '.log', UNLINK => 0);
+  if(system("R --slave -e 'library(DESeq2);' 2> $check_log") != 0) {
+    die "R and/or DESeq2 package are not available (see logs in $check_log)";
+  } else {
+    unlink $check_log;
+  }
 
   # Create a temp file with the R script
   my $rscript = new File::Temp( SUFFIX => '.R', UNLINK => 1);
@@ -112,8 +118,11 @@ sub BUILD {
   close $genes_file;
 
   # We execute the getSwitches script
-  my $switches_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 0);
+  my $switches_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 1);
   close($switches_file);
+
+  # Temp file to place logs from R execution
+  my $rscript_logs = new File::Temp(SUFFIX => '.log', UNLINK => 0);
 
   system(join(" ",
     "Rscript",
@@ -123,8 +132,11 @@ sub BUILD {
     $self->sample_conditions_file,
     $genes_file,
     "2>",
-    "/dev/null"
-  ));
+    $rscript_logs
+  )) == 0 or die ("Error(s) in Switch computing using R and DESeq2 (see logs in $rscript_logs)");
+
+  # Everything went well, we remove the logs
+  unlink $rscript_logs;
 
   {
     my $switches_fh = DEkupl::Utils::getReadingFileHandle($switches_file);
