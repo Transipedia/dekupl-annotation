@@ -135,7 +135,14 @@ sub BUILD {
   # TODO print an info json file with version and stuff!!!
   my $gsnap_log = "$logs_dir/gsnap.log";
   print STDERR "Creating GSNAP index (logs in $gsnap_log). This can take a while...\n";
-  system("gmap_build -D $index_dir -d gsnap --gunzip $index_fasta >> $gsnap_log 2>&1");
+  system(join(' ',
+    "gmap_build",
+    "-D $index_dir",
+    "-d gsnap",
+    "--gunzip",
+    $index_fasta,
+    ">> $gsnap_log 2>&1"
+  )) == 0 or die "Error in GSNAP index building (see logs in $gsnap_log)";
 }
 
 sub usage {
