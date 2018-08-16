@@ -75,7 +75,9 @@ sub BUILD {
   }
 
   # Create output dir
-  mkdir $output_dir or die "Cannot create the output directory";
+  unless (-e $output_dir) {
+     mkdir $output_dir  or die "Cannot create the output directory";
+  }
 
   # Find files from index
   # TODO we should have a class for that
