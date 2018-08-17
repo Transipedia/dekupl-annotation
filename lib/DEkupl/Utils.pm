@@ -236,6 +236,18 @@ sub parseGFFLine {
       $attributes_hash{$k} = $v;
     }
   }
+
+  # This is a hack for GENCODE GFF files that use difference attribute field than ENSEMBL for gene names and biotypes
+  my %conv_attr = (
+    'gene_name' => 'Name',
+    'gene_type' => 'biotype',
+  );
+
+  foreach my $attr (keys %conv_attr) {
+    if(defined $attributes_hash{$attr} && !defined $attributes_hash{$conv_attr{$attr}}) {
+      $attributes_hash{$conv_attr{$attr}} = $attributes_hash{$attr};
+    }
+  }
   
   return { 
     chr        => $chr,
