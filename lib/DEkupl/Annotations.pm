@@ -68,9 +68,11 @@ sub loadFromGFF {
     print STDERR "Loading annotations from chr ".$annot->{chr}."...\n" if($annot->{feature} eq 'chromosome');
 
     my $id = $annot->{attributes}->{ID};
-    $id = DEkupl::Utils::getAtomicGeneID(DEkupl::Utils::parseEnsemblID($id)) if defined $id;
+    $id = DEkupl::Utils::parseEnsemblID($id) if defined $id;
+    $id = DEkupl::Utils::getAtomicGeneID($id) if defined $id;
     my $parent = $annot->{attributes}->{Parent};
-    $parent = DEkupl::Utils::getAtomicGeneID(DEkupl::Utils::parseEnsemblID($parent)) if defined $parent;
+    $parent = DEkupl::Utils::parseEnsemblID($parent) if defined $parent;
+    $parent = DEkupl::Utils::getAtomicGeneID($parent) if defined $parent;
 
     # Add the id to parent relationship
     if(defined $parent && defined $id) {
