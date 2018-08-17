@@ -77,8 +77,14 @@ sub BUILD {
     $bed_fh = DEkupl::Utils::getWritingFileHandle($self->bed_file);
   }
 
+  # Keep counts for verbose prints
+  my $nb_contigs_aligned = 0;
+  my $nb_contigs_unaligned = 0;
+
   my $i = 0;
   while(my $sam_line = $bam_it->()) {
+
+    $i++;
 
     # Slect only primary alignments
     next if $sam_line->{flag} & $flags{SECONDARY_ALIGNMENT} || $sam_line->{flag} & $flags{SUPPLEMENTARY_ALIGNMENT};
@@ -89,11 +95,17 @@ sub BUILD {
     # Load contig from the DB
     my $contig = $self->contigs_db->loadContig($tag);
 
-    $contig->{is_mapped} = DEkupl::Utils::booleanEncoding(!($sam_line->{flag} & $flags{UNMAPPED}));
     $contig->{line_in_sam} = $i;
 
-    # We skip the rest of annotation of the contig is unmapped
-    next if $sam_line->{flag} & $flags{UNMAPPED};
+    if($sam_line->{flag} & $flags{UNMAPPED}) {
+      $nb_contigs_unaligned++;
+      $contig->{is_mapped} = DEkupl::Utils::booleanEncoding(0);
+      # We skip the rest of annotation of the contig is unmapped
+      next;
+    } else {
+      $nb_contigs_aligned++;
+      $contig->{is_mapped} = DEkupl::Utils::booleanEncoding(1);
+    }
 
     $contig->{chromosome} = $sam_line->{rname};
     $contig->{start} = $sam_line->{pos};
@@ -210,10 +222,12 @@ sub BUILD {
       );
       print $bed_fh $bed_line,"\n";
     }
-
-    $i++;
   }
   close($bed_fh) if defined $bed_fh;
+
+  $self->verboseLog("$i SAM lines has been parsed");
+  $self->verboseLog("Found $nb_contigs_aligned contigs with primary alignments");
+  $self->verboseLog("Found $nb_contigs_unaligned contigs with no primary alignments");
 }
 
 sub getHeaders {

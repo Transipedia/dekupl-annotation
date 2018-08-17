@@ -48,16 +48,18 @@ sub BUILD {
   }
 
   # Create a temp file with the R script
-  my $rscript = new File::Temp( SUFFIX => '.R', UNLINK => 1);
+  my $rscript = new File::Temp( SUFFIX => '.R', UNLINK => 0);
 
   while(<RSCRIPT>) {print $rscript $_;}
   close $rscript;
+
+  $self->verboseLog("Temporary Rscript file created at $rscript");
 
   # Change permission to execute the script
   #chmod 0755, $rscript;
 
   # Now we create a temp file with samples counts per contigs and gene information
-  my $contigs_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 1);
+  my $contigs_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 0);
 
   # Print headers
   print $contigs_file join("\t",
@@ -70,9 +72,11 @@ sub BUILD {
   my %gene_ids;
 
   my $contigs_it = $self->contigs_db->contigsIterator();
+  my $nb_contigs_with_genes = 0;
   while(my $contig = $contigs_it->()) {
     my $gene_id = $contig->{gene_id};
     if(defined $gene_id) {
+      $nb_contigs_with_genes++;
       $gene_ids{$gene_id} = 1;
       print $contigs_file join("\t",
         $contig->{tag},
@@ -81,9 +85,14 @@ sub BUILD {
       ), "\n";
     }
   }
+  $self->verboseLog("$nb_contigs_with_genes contigs with genes will be scanned for switches");
+
+  $self->verboseLog("Temporary contigs file created at $contigs_file");
+
+  close $contigs_file;
 
   # Now we create a temp file with samples counts per contigs and gene information
-  my $genes_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 1);
+  my $genes_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 0);
 
   {
     # Print headers
@@ -98,6 +107,8 @@ sub BUILD {
     my @headers = split "\t", $header_line;
     $headers[0] = "gene_id"; # Force the name of the feature column
 
+    my $nb_genes_with_contigs = 0;
+
     while(<$gene_counts_fh>) {
       chomp;
       my @values = split "\t", $_;
@@ -105,26 +116,34 @@ sub BUILD {
 
       my $gene_id = DEkupl::Utils::getAtomicGeneID($fields{gene_id});
 
+      #print STDERR "GENE_ID $gene_id\n"; sleep 1;
+
       # Only print genes that have DE contigs
       next if !defined $gene_ids{$gene_id};
+
+      $nb_genes_with_contigs++;
 
       print $genes_file join("\t",
         $gene_id,
         map { $fields{$_} } $self->all_samples
       ), "\n";
     }
+
+    $self->verboseLog("$nb_genes_with_contigs genes with associated contigs found in DEGs");
   }
+
+  $self->verboseLog("Temporary genes file created at $genes_file");
 
   close $genes_file;
 
   # We execute the getSwitches script
-  my $switches_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 1);
+  my $switches_file = new File::Temp( SUFFIX => '.tsv', UNLINK => 0);
   close($switches_file);
 
   # Temp file to place logs from R execution
   my $rscript_logs = new File::Temp(SUFFIX => '.log', UNLINK => 0);
 
-  system(join(" ",
+  my $command = join(" ",
     "Rscript",
     $rscript,
     $switches_file,
@@ -133,10 +152,19 @@ sub BUILD {
     $genes_file,
     "2>",
     $rscript_logs
-  )) == 0 or die ("Error(s) in Switch computing using R and DESeq2 (see logs in $rscript_logs)");
+  );
 
-  # Everything went well, we remove the logs
+  $self->verboseLog("Command: $command");
+
+  system($command) == 0 or die ("Error(s) in Switch computing using R and DESeq2 (see logs in $rscript_logs)");
+
+  $self->verboseLog("Temporary switches file created at $switches_file");
+
+  # Everything went well, we remove the logs and input files
   unlink $rscript_logs;
+  unlink $rscript;
+  unlink $contigs_file;
+  unlink $genes_file;
 
   {
     my $switches_fh = DEkupl::Utils::getReadingFileHandle($switches_file);

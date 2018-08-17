@@ -75,6 +75,8 @@ sub generateFasta {
   }
   close($fho);
   close($fhi);
+
+  $self->verboseLog("Contigs FASTA generated at $fasta_file");
 }
 
 sub loadContigsDB {
@@ -86,12 +88,14 @@ sub loadContigsDB {
   my $i = 0;
   my $min_abs_log2FC = 0;
   my $max_abs_log2FC = 0;
+  my $nb_contigs_loaded = 0;
 
   while(<$fh>) {
     chomp;
     my $contig = _splitLine($_);
     $contig->{contig_size} = length $contig->{contig};
     $contigs_db->saveContig($contig);
+    $nb_contigs_loaded++;
     
     # Setting min-max absoluted log2FC (used for coloring contigs)
     my $abs_log2FC = abs($contig->{log2FC});
@@ -106,6 +110,10 @@ sub loadContigsDB {
     # print STDERR "$i contigs loaded\n" if $i % 100 == 0;
     $i++;
   }
+
+  $self->verboseLog("$nb_contigs_loaded contigs loaded into tbe database");
+  $self->verboseLog("min abs log2FC is $min_abs_log2FC");
+  $self->verboseLog("max abs log2FC is $max_abs_log2FC");
 
   $self->min_abs_log2FC($min_abs_log2FC);
   $self->max_abs_log2FC($max_abs_log2FC);

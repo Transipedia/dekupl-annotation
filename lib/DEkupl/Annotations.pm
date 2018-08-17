@@ -8,6 +8,8 @@ use DEkupl::Utils;
 use DEkupl::Annotations::Exon;
 use DEkupl::Annotations::Gene;
 
+with 'DEkupl::Base';
+
 =head1 SYNOPSIS
 
 A collection of annotations (gene => [exon => transcript])
@@ -61,11 +63,13 @@ sub loadFromGFF {
   # Store links between IDs and Parents
   my %id_to_parents;
   my @exons;
+  my $nb_genes = 0;
+  my $nb_exons = 0;
 
   my $gene_id;
   while(my $annot = $gff_it->()) {
 
-    print STDERR "Loading annotations from chr ".$annot->{chr}."...\n" if($annot->{feature} eq 'chromosome');
+    $self->verboseLog("Loading annotations from chr ".$annot->{chr}."...") if($annot->{feature} eq 'chromosome');
 
     my $id = $annot->{attributes}->{ID};
     $id = DEkupl::Utils::parseEnsemblID($id) if defined $id;
@@ -101,6 +105,7 @@ sub loadFromGFF {
         # If this gene is not defined yet, we create a new entry
         $gene = DEkupl::Annotations::Gene->new(%gene_info);
         $self->addGene($gene);
+        $nb_genes++;
       }
     }
 
@@ -128,10 +133,14 @@ sub loadFromGFF {
         my $gene = $self->getGene($gene_id);
         if(defined $gene) {
           $exon->gene($gene);
+          $nb_exons++;
         }
       }
     }
   }
+
+  $self->verboseLog("$nb_genes genes loaded");
+  $self->verboseLog("$nb_exons exons loaded");
 }
 
 =head2 loadFromGTF

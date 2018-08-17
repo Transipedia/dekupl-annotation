@@ -3,6 +3,8 @@ package DEkupl::Analyzer;
 
 use Moose::Role;
 
+with 'DEkupl::Base';
+
 has 'contigs_db' => (
   is => 'ro',
   isa => 'DEkupl::ContigsDB'

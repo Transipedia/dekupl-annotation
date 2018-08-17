@@ -50,6 +50,11 @@ sub BUILD {
 
   my %loci;
 
+  my $nb_annot            = 0;
+  my $nb_annot_as         = 0;
+  my $nb_annot_upstream   = 0;
+  my $nb_annot_downstream = 0;
+
   while(my $contig = $contigs_it->()) {
 
     if($contig->{is_mapped}) {
@@ -145,10 +150,12 @@ sub BUILD {
         # We have found a candidate gene!
         if(defined $candidate->{gene}) {
           if($strand eq 'fwd') {
+            $nb_annot++;
             _setContigGeneInfo($contig,$candidate->{gene});
             $contig->{exonic}   = DEkupl::Utils::booleanEncoding($candidate->{is_exonic});
             $contig->{intronic} = DEkupl::Utils::booleanEncoding($candidate->{is_intronic});
           } elsif($strand eq 'rv') {
+            $nb_annot_as++;
             _setContigGeneInfo($contig,$candidate->{gene},'as');
           }
         }
@@ -160,6 +167,7 @@ sub BUILD {
         if(ref($upstream_result) eq 'DEkupl::Annotations::Exon') {
           $upstream_result = $upstream_result->gene;
         }
+        $nb_annot_upstream++;
         _setContigGeneInfo($contig,$upstream_result,'upstream');
         $contig->{'upstream_gene_dist'}   = $upstream_dist;
       }
@@ -170,6 +178,7 @@ sub BUILD {
         if(ref($downstream_result) eq 'DEkupl::Annotations::Exon') {
           $downstream_result = $downstream_result->gene;
         }
+        $nb_annot_downstream++;
         _setContigGeneInfo($contig,$downstream_result,'downstream');
         $contig->{'downstream_gene_dist'}   = $downstream_dist;
       }
@@ -204,6 +213,11 @@ sub BUILD {
       $self->contigs_db->saveContig($contig);
     }
   }
+
+  $self->verboseLog("$nb_annot contigs annotated with a gene");
+  $self->verboseLog("$nb_annot_as contigs annotated with an antisens gene");
+  $self->verboseLog("$nb_annot_upstream contigs annotated with an upstream gene");
+  $self->verboseLog("$nb_annot_downstream contigs annotated with an downstream gene");
 
   # Print locus to loci files
   my @loci_headers = qw(locus_id gene_symbol number_of_contigs best_log2FC best_pvalue chromosome start end strand locus_type);

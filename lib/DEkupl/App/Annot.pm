@@ -4,6 +4,7 @@ package DEkupl::App::Annot;
 use Moose;
 use Getopt::Long;
 use File::Temp qw/ tempdir /;
+use Term::ANSIColor;
 
 use DEkupl;
 use DEkupl::GSNAP;
@@ -20,7 +21,7 @@ use DEkupl::Analyzer::Switches;
 sub BUILD {
   my $self = shift;
 
-  my ($help);
+  my ($help,$verbose);
   my ($contigs_file, $index_dir, $deg_file, $version);
   my $normalized_gene_counts_file;
   my $sample_conditions_file;
@@ -35,6 +36,7 @@ sub BUILD {
 
   GetOptions(
       "help"             => \$help,
+      "v|verbose"        => \$verbose,
       # Input / Output
       #"c|contigs=s"      => \$contigs_file,
       "o|output=s"       => \$output_dir,
@@ -79,6 +81,8 @@ sub BUILD {
      mkdir $output_dir  or die "Cannot create the output directory";
   }
 
+  my $step = 0;
+
   # Find files from index
   # TODO we should have a class for that
   # that load the config file and check that everything is ok
@@ -86,7 +90,11 @@ sub BUILD {
   my @analyzers;
 
   # Create contigs object
-  my $contigs = DEkupl::Contigs->new(contigs_file => $contigs_file, is_stranded => $is_stranded);
+  my $contigs = DEkupl::Contigs->new(
+    verbose       => $verbose,
+    contigs_file  => $contigs_file, 
+    is_stranded   => $is_stranded
+  );
   push @analyzers, $contigs;
 
   my $gsnap = DEkupl::GSNAP->new(
@@ -98,18 +106,18 @@ sub BUILD {
   # Create FASTA file
   my $fasta_file = "$output_dir/contigs.fa.gz";
   if(-e $fasta_file && $debug) {
-    print STDERR "Skipping FASTA file\n";
+    printStep(\$step,"Skipping FASTA file");
   } else {
-    print STDERR "Generating FASTA file\n";
-  $contigs->generateFasta($fasta_file);
+    printStep(\$step,"Generating FASTA file");
+    $contigs->generateFasta($fasta_file);
   }
 
   # Generate BAM file
   my $bam_file = "$output_dir/contigs.bam";
   if(-e $bam_file && $debug) {
-    print STDERR "Skipping GSNAP mapping\n";
+    printStep(\$step,"Skipping GSNAP mapping");
   } else {
-    print STDERR "Running GSNAP\n";
+    printStep(\$step,"Running GSNAP");
     $gsnap->generateBam($fasta_file,$bam_file);
   }
 
@@ -117,12 +125,13 @@ sub BUILD {
   #my $tempdir = tempdir(CLEANUP => 1);
   my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX",CLEANUP => 1);
   my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
-  print STDERR "Loading contigs DB into $tempdir\n";
+  printStep(\$step,"Loading contigs DB into $tempdir");
   $contigs->loadContigsDB($contigs_db);
 
-  print STDERR "Parsing BAM file\n";
+  printStep(\$step,"Parsing BAM file");
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
+    verbose           => $verbose,
     contigs           => $contigs,
     contigs_db        => $contigs_db,
     bam_file          => $bam_file,
@@ -134,17 +143,18 @@ sub BUILD {
 
   # TODO: We should do that in separate space, in order to unload annotations from
   # memory as soon as the annotation is done remove them after annotation.
-  print STDERR "Loading annotations into memory\n";
-  my $annotations = DEkupl::Annotations->new();
+  printStep(\$step,"Loading annotations into memory");
+  my $annotations = DEkupl::Annotations->new(verbose => $verbose);
   $annotations->loadFromGFF($gff_file,'gff3');
 
-  print STDERR "Loading annotations to the interval tree\n";
+  printStep(\$step,"Loading annotations to the interval tree");
   my $interval_query = DEkupl::IntervalQuery->new();
   $interval_query->loadAnnotations($annotations);
 
-  print STDERR "Annotating contigs\n";
+  printStep(\$step,"Annotating contigs");
   my $loci_file = "$output_dir/ContigsPerLoci.tsv.gz";
   my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
+    verbose         => $verbose,
     contigs_db      => $contigs_db,
     interval_query  => $interval_query,
     is_stranded     => $is_stranded,
@@ -154,8 +164,9 @@ sub BUILD {
 
   # If we have DEG (Differentially expressed genes, we add appened information to the contigs)
   if(defined $deg_file) {
-    print STDERR "Adding DEG informations\n";
+    printStep(\$step,"Adding DEG informations");
     my $deg_analyzer = DEkupl::Analyzer::DEG->new(
+      verbose     => $verbose,
       contigs_db  => $contigs_db,
       deg_file    => $deg_file,
       is_stranded => $is_stranded,
@@ -165,9 +176,10 @@ sub BUILD {
   }
 
   if(defined $normalized_gene_counts_file && defined $sample_conditions_file) {
-    print STDERR "Computing switches\n";
+    printStep(\$step,"Computing switches");
     my @sample_names = $contigs->all_samples;
     my $switches_analyzer = DEkupl::Analyzer::Switches->new(
+      verbose                     => $verbose,
       contigs_db                  => $contigs_db,
       is_stranded                 => $is_stranded,
       sample_names                => \@sample_names,
@@ -183,6 +195,7 @@ sub BUILD {
   my $contigs_info_file = "$output_dir/DiffContigsInfos.tsv";
   my $contigs_info_fh   = DEkupl::Utils::getWritingFileHandle($contigs_info_file);
 
+  printStep(\$step,"Printing final output in $contigs_info_file");
   # Print headers
   print $contigs_info_fh join("\t",
     map { $_->getHeaders() } @analyzers
@@ -227,9 +240,18 @@ Options:
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
 		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
       -h,--help           show this help message and exit
+      -v,--verbose        print additionnal debug messages
 END
 
   print $usage;
+}
+
+sub printStep {
+  my ($step,$message) = @_;
+  print STDERR color('bold blue');
+  print STDERR "[Step ".++$$step."]";
+  print STDERR color('reset');
+  print STDERR " $message\n";
 }
 
 no Moose;
