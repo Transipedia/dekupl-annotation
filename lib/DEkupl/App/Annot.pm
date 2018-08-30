@@ -63,7 +63,7 @@ sub BUILD {
   $contigs_file = shift @ARGV;
 
   if(!defined $contigs_file) {
-    print STDERR "Missing contig file (-c,--contigs)\n";
+    print STDERR "Missing contig file (aka. merged-diff-counts.tsv.gz)\n";
     usage() && exit(1);
   }
 
