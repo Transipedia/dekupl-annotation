@@ -18,6 +18,12 @@
     [x] GSNAP
     [x] Samtools
     [x] R & DESeq2
+
+[ ] Faire des tests pour vérifier que le fichier d'input sont bien formés
+    [x] Sample conditions
+    [ ] Contigs (merged-diff-counts)
+    [ ] Normalized counts
+    [ ] DEGs
 [ ] Logs de GSNAP dans le dossier de résultats et pas un fichier temporaire
     Idem pour DESeq2
 [x] Choix de l'annotations si plusieurs chevauchantes :
@@ -30,7 +36,7 @@
 [x] On renomme 5p et 4p en downstream/upstream
 [ ] Ajout d'une colonne avec la liste des features GFF qui overlappent le contig
 [ ] Ontologie UTR  : pas de modifications
-[ ] Benchmark des procédure pour la recherche de fusion : GNSAP 2-step, STAR, Blast
+[x] Benchmark des procédure pour la recherche de fusion : GNSAP 2-step, STAR, Blast
 [ ] Ajout du mapping BLAST pour les primers
 [ ] Ajout du mapping BLAST pour les contigs non mappés par GSNAP
 [ ] Ajouter des time sur les logs pour faire des stats

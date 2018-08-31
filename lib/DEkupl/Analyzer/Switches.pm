@@ -47,6 +47,9 @@ sub BUILD {
     unlink $check_log;
   }
 
+  # Verify that the sample condition file is correct
+  verifySampleConditionsFile($self->sample_conditions_file, $self->sample_names);
+
   # Create a temp file with the R script
   my $rscript = new File::Temp( SUFFIX => '.R', UNLINK => 0);
 
@@ -180,6 +183,33 @@ sub BUILD {
     }
   }
 
+}
+
+sub verifySampleConditionsFile {
+  my $file          = shift;
+  my $sample_names  = shift;
+  my $fh = DEkupl::Utils::getReadingFileHandle($file);
+  my $header_line = <$fh>;
+  my %samples_check = map { $_ => 0 } @{$sample_names};
+  my $i = 1;
+  while(<$fh>) {
+    chomp;
+    my ($sample, $condition, $normalization_factor) = split "\t", $_;
+    die("Line $i did not had three columns in file $file (file must be tabulated") unless defined $sample && defined $condition && defined $normalization_factor;
+    die("Sample name $sample does not match contig file at line $i in file $file") unless defined $samples_check{$sample};
+    die("Normalization factor ($normalization_factor) must have a positive value at line $i in file $file") unless $normalization_factor > 0;
+    $samples_check{$sample}++;
+    $i++;
+  }
+  # Verify is all samples in the contigs file have been found and that there is no duplicated entries
+  foreach my $k (keys %samples_check) {
+    if($samples_check{$k} == 0) {
+      die("Sample $k not found in file $file");
+    } elsif($samples_check{$k} > 1) {
+      die("Duplicated entry for sample $k in file $file");
+    }
+  }
+  return 0;
 }
 
 sub getHeaders {
