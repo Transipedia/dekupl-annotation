@@ -25,6 +25,11 @@ has id  => (is => 'ro', isa => 'Str', required => 1);
 has symbol => (is => 'ro', isa => 'Str');
 has biotype => (is => 'ro', isa => 'Str');
 
+# These are start & end values for this gene in the GFF file
+# However "start" and "end" getter uses genes positions
+has gff_start => (is => 'ro', isa => 'Int');
+has gff_end   => (is => 'ro', isa => 'Int');
+
 # Compute start on the fly
 has '+start' => (
   lazy  => 1,

@@ -98,6 +98,8 @@ sub loadFromGFF {
           chr     => $annot->{chr},
           strand  => $annot->{strand},
           id      => $gene_id,
+          gff_start => $annot->{start} - 1,
+          gff_end   => $annot->{end} - 1,
         );
         $gene_info{symbol} = $gene_symbol if defined $gene_symbol;
         my $biotype = $annot->{attributes}->{biotype};
@@ -110,7 +112,6 @@ sub loadFromGFF {
     }
 
     if($annot->{feature} eq 'exon') {
-
       # The exon adds itself to the gene
       my $exon = DEkupl::Annotations::Exon->new(
         start     => $annot->{start} - 1,
@@ -136,6 +137,19 @@ sub loadFromGFF {
           $nb_exons++;
         }
       }
+    }
+  }
+
+  # For genes with no exons, we create a fictif exon
+  # with the gene start & end coordinates
+  foreach my $gene ($self->allGenes) {
+    if($gene->nbExons == 0) {
+      my $exon = DEkupl::Annotations::Exon->new(
+        start     => $gene->gff_start,
+        end       => $gene->gff_end,
+        gene      => $gene,
+        transcripts => [],
+      );
     }
   }
 
