@@ -33,6 +33,16 @@ sub loadContig {
   return $contig;
 }
 
+sub deleteContig {
+  my $self = shift;
+  my $tag = shift;
+  my $file = $self->_getContigFile($tag);
+  my $contig;
+  if(-e $file) {
+    unlink $file;
+  }
+}
+
 sub contigsIterator {
   my $self = shift;
   opendir(DIR, $self->db_folder) or die $!;
@@ -52,6 +62,17 @@ sub contigsIterator {
       return;
     }
   }
+}
+
+sub generateFasta {
+  my $self = shift;
+  my $fasta_file = shift;
+  my $fh = DEkupl::Utils::getWritingFileHandle($fasta_file);
+  my $contigs_it = $self->contigsIterator;
+  while(my $contig = $contigs_it->()) {
+    print $fh ">".$contig->{tag}."\n".$contig->{contig},"\n";
+  }
+  close($fh);
 }
 
 sub _getTag {

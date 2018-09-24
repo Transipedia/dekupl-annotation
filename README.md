@@ -55,6 +55,7 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 * R (version >= version 3.2.3) with libraries DESeq2
 * GSNAP (version >= 2016-11-07)
 * samtools (version >= 1.3)
+* blast (version >= 2.5.0+)
 
 ### Install from the sources
 
@@ -63,7 +64,8 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 Dependencies are cpan-minus (aka cpanm) and Dist::Zilla :
 
 ```
-apt-get install cpanminus libdist-zilla-perl
+apt-get install cpanminus libdist-zilla-perl gmap samtools ncbi-blast+
+Rscript install_r_packages.R # Install DESeq2 from bioconductor
 ```
 
 #### Global install

@@ -12,7 +12,13 @@ has 'verbose' => (
 sub verboseLog {
   my $self = shift;
   my $message = shift;
-  print STDERR "[".$self->meta->name."] $message\n" if $self->verbose;
+  $self->log($message) if $self->verbose;
+}
+
+sub log {
+  my $self = shift;
+  my $message = shift;
+  print STDERR "[".$self->meta->name."] $message\n";
 }
 
 1;

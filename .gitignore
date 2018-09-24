@@ -1,2 +1,5 @@
 .vscode/
 .pytest_cache/
+.DS_Store
+DEkupl_annotation/
+test_index/

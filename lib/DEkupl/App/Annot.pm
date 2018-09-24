@@ -7,6 +7,7 @@ use File::Temp qw/ tempdir /;
 use Term::ANSIColor;
 
 use DEkupl;
+use DEkupl::RemoveAdapters;
 use DEkupl::GSNAP;
 use DEkupl::Contigs;
 use DEkupl::ContigsDB;
@@ -128,6 +129,12 @@ sub BUILD {
   printStep(\$step,"Loading contigs DB into $tempdir");
   $contigs->loadContigsDB($contigs_db);
 
+  # Remove contigs matching adapters
+  my $remove_adapters = DEkupl::RemoveAdapters->new(verbose => $verbose);
+  printStep(\$step,"Remove contigs matching adapters");
+  $remove_adapters->removeAdapterContigs($contigs_db);
+
+  # Annotating contigs with BAM from GSNAP
   printStep(\$step,"Parsing BAM file");
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(

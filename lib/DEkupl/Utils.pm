@@ -378,4 +378,28 @@ sub checkGSNAPVersion {
   }
 }
 
+sub checkBlastnVersion {
+  my $min_version = "2.5.0";
+  if(system("blastn -version > /dev/null") == 0) {
+    my ($version) = `blastn -version` =~ /blastn:\s(\S+)\+/;
+    die "blastn version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
+    print STDERR "Using blastn version $version\n";
+  } else {
+    die "blastn is not acessible in the \$PATH";
+  }
+}
+
+sub checkMakeblastdbVersion {
+  my $min_version = "2.5.0";
+  if(system("makeblastdb -version > /dev/null") == 0) {
+    # makeblastdb: 2.7.1+
+    # Package: blast 2.7.1, build Feb 16 2018 14:27:59
+    my ($version) = `makeblastdb -version` =~ /makeblastdb:\s(\S+)\+/;
+    die "makeblastdb version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
+    print STDERR "Using makeblastdb version $version\n";
+  } else {
+    die "makeblastdb is not acessible in the \$PATH";
+  }
+}
+
 1;

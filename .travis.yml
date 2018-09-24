@@ -9,6 +9,7 @@ addons:
       - zlib1g-dev
       - cpanminus
       - libdist-zilla-perl
+      - ncbi-blast+
 before_install:
   # Install latest R version
   #- sudo add-apt-repository https://cloud.r-project.org/bin/linux/ubuntu trusty/
