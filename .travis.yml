@@ -46,8 +46,9 @@ install:
   # Install latest R version
   - sudo apt-get -y install r-base r-base-dev
 
-  # Install STAR
-  - conda install star
+  # Install STAR with conda
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION star
+  - source activate test-environment
 
   # Install samtools from the sources
   - git clone https://github.com/samtools/htslib.git
