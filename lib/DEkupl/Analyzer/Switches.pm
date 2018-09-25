@@ -5,7 +5,6 @@ use Moose;
 
 use DEkupl::Utils;
 use File::Temp;
-use Inline::Files 0.68;
 
 with 'DEkupl::Analyzer';
 
@@ -53,7 +52,7 @@ sub BUILD {
   # Create a temp file with the R script
   my $rscript = new File::Temp( SUFFIX => '.R', UNLINK => 0);
 
-  while(<RSCRIPT>) {print $rscript $_;}
+  print $rscript getRscript();
   close $rscript;
 
   $self->verboseLog("Temporary Rscript file created at $rscript");
@@ -224,11 +223,8 @@ sub getValues {
   return @values;
 }
 
-
-no Moose;
-__PACKAGE__->meta->make_immutable;
-
-__RSCRIPT__
+sub getRscript {
+  my $rscript_content =<<END;
 #!/usr/bin/env Rscript
 
 args <- commandArgs(TRUE)
@@ -254,23 +250,23 @@ normalizedGeneCounts  <- read.delim(normalized_gene_counts_file,check.names=F)
 #### process data ####
 
 #intersect KALLISTO gene IDs & DEKUPL gene IDs
-tab_counts_DEkupl     <- tab_counts_DEkupl[which(tab_counts_DEkupl$gene_id %in% normalizedGeneCounts$gene_id),]
-normalizedGeneCounts  <- normalizedGeneCounts[which(normalizedGeneCounts$gene_id %in% tab_counts_DEkupl$gene_id),]
+tab_counts_DEkupl     <- tab_counts_DEkupl[which(tab_counts_DEkupl\$gene_id \%in% normalizedGeneCounts\$gene_id),]
+normalizedGeneCounts  <- normalizedGeneCounts[which(normalizedGeneCounts\$gene_id \%in% tab_counts_DEkupl$\gene_id),]
 tab_counts_Kallisto   <- merge(tab_counts_DEkupl,normalizedGeneCounts, by.x="gene_id", by.y="gene_id", all.x=T, all.y=F)
 
 #reorganize columns in order to have contig ID, gene ID & KALLISTO counts (same order as tab_counts_DEkupl)
 tab_counts_Kallisto   <- tab_counts_Kallisto[,c(2,1,(ncol(tab_counts_DEkupl)+1):(ncol(tab_counts_Kallisto)))]
 
 #order both tables following the contig ID
-tab_counts_Kallisto   <- tab_counts_Kallisto[order(tab_counts_Kallisto$contig_id),] 
+tab_counts_Kallisto   <- tab_counts_Kallisto[order(tab_counts_Kallisto\$contig_id),] 
 
-tab_counts_DEkupl     <- tab_counts_DEkupl[order(tab_counts_DEkupl$contig_id),]
+tab_counts_DEkupl     <- tab_counts_DEkupl[order(tab_counts_DEkupl\$contig_id),]
 
 #keep the same header for both tables
 names(tab_counts_Kallisto)[3:ncol(tab_counts_Kallisto)] <- names(tab_counts_DEkupl)[3:ncol(tab_counts_DEkupl)]
 
 #prepare contigs with their counts for DESeq2 (row names = contig ID, and we keep only counts without any other columns)
-rownames(tab_counts_DEkupl) <- tab_counts_DEkupl$contig_id
+rownames(tab_counts_DEkupl) <- tab_counts_DEkupl\$contig_id
 
 tab_counts_DEkupl[,c(1,2)] <- NULL
 
@@ -321,9 +317,15 @@ DESeq2Result <- DESeq2Result[c("padj","stat")] # extract padj
 #make a custom table with contig ID,mean cond1, mean cond2, log2FC, padj, normalized counts for all libraries
 new_result <- data.frame(
   contig_id = row.names(DESeq2Result),
-  du_pvalue = DESeq2Result$padj,
-  du_stat   = DESeq2Result$stat,row.names=NULL
+  du_pvalue = DESeq2Result\$padj,
+  du_stat   = DESeq2Result\$stat,row.names=NULL
 )
 
 # Write the table to the output file
 write.table(new_result, file=output_file, sep="\t", row.names=F, col.names=T, quote=F)
+END
+  return $rscript_content;
+}
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
