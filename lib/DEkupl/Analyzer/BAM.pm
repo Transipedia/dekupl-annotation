@@ -94,6 +94,8 @@ sub BUILD {
 
     # Load contig from the DB
     my $contig = $self->contigs_db->loadContig($tag);
+    # The contig might have been deleted by adapter removal
+    next if !defined $contig;
 
     $contig->{line_in_sam} = $i;
 
