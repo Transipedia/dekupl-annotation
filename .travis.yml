@@ -25,12 +25,29 @@ before_install:
   # update after package changes
   - sudo apt-get update -qq
 
+  # install conda
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+
+  # Set-up conda channels
+  - conda config --add channels defaults
+  - conda config --add channels bioconda
+  - conda config --add channels conda-forge 
+
 install:
   # Install latest R version
   - sudo apt-get -y install r-base r-base-dev
 
   # Install STAR
-  - sudo apt-get install -qq rna-star
+  - conda install star
 
   # Install samtools from the sources
   - git clone https://github.com/samtools/htslib.git
