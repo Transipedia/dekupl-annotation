@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Term::ANSIColor;
 
 use Moose::Util::TypeConstraints;
 
@@ -344,7 +345,7 @@ sub isVersionGreaterOrEqual($$) {
   for(my $i = 0; $i < @v1_nums; $i++) {
     if($v1_nums[$i] >= $v2_nums[$i]) {
       return 1;
-    }else {
+    } else {
       return 0;
     }
   }
@@ -400,6 +401,26 @@ sub checkMakeblastdbVersion {
   } else {
     die "makeblastdb is not acessible in the \$PATH";
   }
+}
+
+sub checkSTARVersion {
+  my $min_version = "2.5.3";
+  if(system("STAR --version > /dev/null") == 0) {
+    # STAR_2.5.3a
+    my ($version) = `STAR --version` =~ /STAR_(\S+)[a-z]$/;
+    die "STAR version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
+    print STDERR "Using STAR version $version\n";
+  } else {
+    die "STAR is not acessible in the \$PATH";
+  }
+}
+
+sub printStep {
+  my ($step, $message) = @_;
+  print STDERR color('bold blue');
+  print STDERR "[Step ".++$$step."]";
+  print STDERR color('reset');
+  print STDERR " $message\n";
 }
 
 1;

@@ -4,20 +4,23 @@ package DEkupl::App::Annot;
 use Moose;
 use Getopt::Long;
 use File::Temp qw/ tempdir /;
-use Term::ANSIColor;
 
 use DEkupl;
+use DEkupl::Utils;
 use DEkupl::RemoveAdapters;
-use DEkupl::GSNAP;
 use DEkupl::Contigs;
 use DEkupl::ContigsDB;
 use DEkupl::Annotations;
 use DEkupl::IntervalQuery;
 
+use DEkupl::Aligner::GSNAP;
+use DEkupl::Aligner::STAR;
+
 use DEkupl::Analyzer::BAM;
 use DEkupl::Analyzer::Annotations;
 use DEkupl::Analyzer::DEG;
 use DEkupl::Analyzer::Switches;
+use DEkupl::Analyzer::ChimericRNA;
 
 sub BUILD {
   my $self = shift;
@@ -34,6 +37,7 @@ sub BUILD {
   my $is_stranded = 0;
   my $deg_padj_threshold = 0.05;
   my $contig_color_mode = 1;
+  my $max_splice_length = 100000;
 
   GetOptions(
       "help"             => \$help,
@@ -47,11 +51,12 @@ sub BUILD {
       "sample-conditions=s" => \$sample_conditions_file,
 
       # Options
-      "t|threads=i"      => \$nb_threads,
-      "s|stranded"       => \$is_stranded,
-      "p|deg-padj"       => \$deg_padj_threshold,
-      "contig-color=i"   => \$contig_color_mode,
-      "version"          => \$version,
+      "t|threads=i"         => \$nb_threads,
+      "s|stranded"          => \$is_stranded,
+      "p|deg-padj=f"        => \$deg_padj_threshold,
+      "max-splice-length=i" => \$max_splice_length,
+      "contig-color=i"      => \$contig_color_mode,
+      "version"             => \$version,
   ) or pod2usage(-verbose => 1);
 
   usage() if ($help);
@@ -98,44 +103,42 @@ sub BUILD {
   );
   push @analyzers, $contigs;
 
-  my $gsnap = DEkupl::GSNAP->new(
-    index_dir   => $index_dir,
-    index_name  => "gsnap",
-    nb_threads  => $nb_threads,
-  );
-
-  # Create FASTA file
-  my $fasta_file = "$output_dir/contigs.fa.gz";
-  if(-e $fasta_file && $debug) {
-    printStep(\$step,"Skipping FASTA file");
-  } else {
-    printStep(\$step,"Generating FASTA file");
-    $contigs->generateFasta($fasta_file);
-  }
-
-  # Generate BAM file
-  my $bam_file = "$output_dir/contigs.bam";
-  if(-e $bam_file && $debug) {
-    printStep(\$step,"Skipping GSNAP mapping");
-  } else {
-    printStep(\$step,"Running GSNAP");
-    $gsnap->generateBam($fasta_file,$bam_file);
-  }
-
   # Create contigs DB
-  #my $tempdir = tempdir(CLEANUP => 1);
-  my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX",CLEANUP => 1);
+  my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX", CLEANUP => 1);
   my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
-  printStep(\$step,"Loading contigs DB into $tempdir");
+  DEkupl::Utils::printStep(\$step,"Loading contigs DB into $tempdir");
   $contigs->loadContigsDB($contigs_db);
 
   # Remove contigs matching adapters
   my $remove_adapters = DEkupl::RemoveAdapters->new(verbose => $verbose);
-  printStep(\$step,"Remove contigs matching adapters");
+  DEkupl::Utils::printStep(\$step,"Remove contigs matching adapters");
   $remove_adapters->removeAdapterContigs($contigs_db);
 
+  # Create FASTA file
+  my $fasta_file = "$output_dir/contigs.fa.gz";
+  if(-e $fasta_file && $debug) {
+    DEkupl::Utils::printStep(\$step,"Skipping FASTA file");
+  } else {
+    DEkupl::Utils::printStep(\$step,"Generating FASTA file");
+    $contigs->generateFasta($fasta_file);
+  }
+
+  # Generate BAM with GSNAP
+  my $bam_file = "$output_dir/contigs.bam";
+  if(-e $bam_file && $debug) {
+    DEkupl::Utils::printStep(\$step,"Skipping GSNAP mapping");
+  } else {
+    DEkupl::Utils::printStep(\$step,"Running GSNAP");
+    my $gsnap = DEkupl::Aligner::GSNAP->new(
+      index_dir   => $index_dir,
+      index_name  => "gsnap",
+      nb_threads  => $nb_threads,
+    );
+    $gsnap->generateBam($fasta_file, $bam_file);
+  }
+
   # Annotating contigs with BAM from GSNAP
-  printStep(\$step,"Parsing BAM file");
+  DEkupl::Utils::printStep(\$step,"Parsing BAM file");
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
     verbose           => $verbose,
@@ -148,17 +151,42 @@ sub BUILD {
   );
   push @analyzers, $bam_analyzer;
 
+  # Generate Chimeric junctions with STAR (if index is available)
+  if(-e "$index_dir/star") {
+    my $chimeric_file = "$output_dir/STAR/Chimeric.out.junction";
+    if(-e $chimeric_file) {
+      DEkupl::Utils::printStep(\$step,"Skipping STAR mapping");
+    } else {
+      DEkupl::Utils::printStep(\$step,"Running STAR");
+      my $star = DEkupl::Aligner::STAR->new(
+        index_dir   => "$index_dir/star",
+        nb_threads  => $nb_threads,
+        verbose     => $verbose,
+      );
+      mkdir "$output_dir/STAR" if !-e "$output_dir/STAR/";
+      $star->generateChimericJunctions($fasta_file,"$output_dir/STAR");
+    }
+    my $chimeric_analyzer = DEkupl::Analyzer::ChimericRNA->new(
+      verbose           => $verbose,
+      contigs_db        => $contigs_db,
+      is_stranded       => $is_stranded,
+      chimeric_file     => $chimeric_file,
+      max_splice_length => $max_splice_length,
+    );
+    push @analyzers, $chimeric_analyzer;
+  }
+
   # TODO: We should do that in separate space, in order to unload annotations from
   # memory as soon as the annotation is done remove them after annotation.
-  printStep(\$step,"Loading annotations into memory");
+  DEkupl::Utils::printStep(\$step,"Loading annotations into memory");
   my $annotations = DEkupl::Annotations->new(verbose => $verbose);
   $annotations->loadFromGFF($gff_file,'gff3');
 
-  printStep(\$step,"Loading annotations to the interval tree");
+  DEkupl::Utils::printStep(\$step,"Loading annotations to the interval tree");
   my $interval_query = DEkupl::IntervalQuery->new();
   $interval_query->loadAnnotations($annotations);
 
-  printStep(\$step,"Annotating contigs");
+  DEkupl::Utils::printStep(\$step,"Annotating contigs");
   my $loci_file = "$output_dir/ContigsPerLoci.tsv.gz";
   my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
     verbose         => $verbose,
@@ -171,7 +199,7 @@ sub BUILD {
 
   # If we have DEG (Differentially expressed genes, we add appened information to the contigs)
   if(defined $deg_file) {
-    printStep(\$step,"Adding DEG informations");
+    DEkupl::Utils::printStep(\$step,"Adding DEG informations");
     my $deg_analyzer = DEkupl::Analyzer::DEG->new(
       verbose     => $verbose,
       contigs_db  => $contigs_db,
@@ -183,7 +211,7 @@ sub BUILD {
   }
 
   if(defined $normalized_gene_counts_file && defined $sample_conditions_file) {
-    printStep(\$step,"Computing switches");
+    DEkupl::Utils::printStep(\$step,"Computing switches");
     my @sample_names = $contigs->all_samples;
     my $switches_analyzer = DEkupl::Analyzer::Switches->new(
       verbose                     => $verbose,
@@ -202,7 +230,7 @@ sub BUILD {
   my $contigs_info_file = "$output_dir/DiffContigsInfos.tsv";
   my $contigs_info_fh   = DEkupl::Utils::getWritingFileHandle($contigs_info_file);
 
-  printStep(\$step,"Printing final output in $contigs_info_file");
+  DEkupl::Utils::printStep(\$step,"Printing final output in $contigs_info_file");
   # Print headers
   print $contigs_info_fh join("\t",
     map { $_->getHeaders() } @analyzers
@@ -243,6 +271,8 @@ Options:
       -t,--threads INT    Number of threads (for GSNAP)
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
+      --max-splice-length 
+                          Splice with greater length are considered as chimeric junctions (default 100000)
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
 		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
@@ -251,14 +281,6 @@ Options:
 END
 
   print $usage;
-}
-
-sub printStep {
-  my ($step,$message) = @_;
-  print STDERR color('bold blue');
-  print STDERR "[Step ".++$$step."]";
-  print STDERR color('reset');
-  print STDERR " $message\n";
 }
 
 no Moose;

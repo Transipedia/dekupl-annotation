@@ -14,20 +14,61 @@ of this file can be downloaded from [Ensembl](https://www.ensembl.org/info/data/
 
 Input files can be gzipped.
 
-The following command with create the index under the `index_dir` directory.
+```
+Usage:
+    dkpl indx -g gff_file -f genome.fasta -i index_dir
 
+  Mandatory Arguments:
+      -a,--annotations FILE   GFF annotation file
+      -g,--genome FILE        Genome if FASTA format
+      -i,--index DIR          Output index directory.
+
+  Optional Arguments:
+      -h,--help           show this help message and exit
+      -t,--threads INT    Number of threads
+      --star              Index the genome with STAR (for discovery of chimeric RNA)
+                          It needs ~30gb of RAM for Human genome
 ```
-dkpl index -g genome.fasta -a annotations.gff3 -i index_dir
-```
+
+You can use the `--star` option to create a index of the genome with STAR that will
+be used during the annotation for searching chimeric RNA (fusions, circRNA, etc).
+STAR index is loaded into memory and requires up to 30gb for the human genome.
 
 ### Annotating contigs
 
 Once an index has been constructed you can annotate contigs from a DEkupl-run. 
 The minimal input to run DEkupl-annotation is the contigs file 
-(merged-diff-counts.tsv.gz) produced by DEkupl-run.
+(merged-diff-counts.tsv.gz) produced by DEkupl-run. If the input files are stranded,
+you need to add the `--stranded` option, in order to get the annotations on the right strand.
 
 ```
-dkpl annot -i index_dir merged-diff-counts.tsv.gz
+Usage:
+    dkpl annot -i index_dir/ merged-diff-counts.tsv.gz
+
+Options:
+  Requiered Arguments:
+      -i,--index DIR      path to the index directory (created with dkplannot index)
+
+  Input/Output:
+      -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
+      -d,--deg FILE       (Optional) {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
+      --norm-gene-counts FILE 
+                          (Optional) Normalized gene counts
+      --sample-conditions FILE 
+                          (Optional) Sample conditions. First column is sample name,
+                          second column is sample condition)
+
+  Optional Arguments:
+      -t,--threads INT    Number of threads (for GSNAP)
+      -s,--stranded       RNA-Seq is strand-specific.
+      -p,--deg-padj       padj diff. gene threshold (default : 0.05)
+      --max-splice-length 
+                          Splice with greater length are considered as chimeric junctions (default $max_splice_length)
+      --contig-color INT  Contig color mode (default 1):
+                            1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
+		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
+      -h,--help           show this help message and exit
+      -v,--verbose        print additionnal debug messages
 ```
 
 Output files will be placed under the `DEkupl_annotation` directory unless you specify
@@ -37,6 +78,9 @@ Extra file can be supplied to complete the annotation process (see ontolgy table
 
 * differentially expressed genes (`--deg`) for DEG analyzer
 * nomarlized gene counts (`--norm-gene-counts`) and sample conditions (`--sample-conditions`) for Switches analyzer.
+
+If the index was created with the `--star` option, then dkpl-annot will look for chimeric junctions.
+
 
 ### Tutorial & toys
 
@@ -56,6 +100,10 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 * GSNAP (version >= 2016-11-07)
 * samtools (version >= 1.3)
 * blast (version >= 2.5.0+)
+
+### Optional dependencies
+
+* STAR (version >= 2.5.3) for chimeric RNA
 
 ### Install from the sources
 

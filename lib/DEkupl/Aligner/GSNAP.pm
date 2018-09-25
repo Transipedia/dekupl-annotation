@@ -1,8 +1,10 @@
-package DEkupl::GSNAP;
+package DEkupl::Aligner::GSNAP;
 # ABSTRACT: Run GSNAP Aligner
 
 use Moose;
 use File::Temp;
+
+with 'DEkupl::Base';
 
 has 'index_dir' => (
   is => 'ro',
@@ -35,7 +37,7 @@ sub generateBam {
   my $output_file = shift;
 
   my $logs = File::Temp->new(UNLINK => 0, SUFFIX => '.log');
-  print STDERR "GSNAP logs are located in $logs\n";
+  $self->verboseLog("GSNAP logs are located in $logs");
 
   my $command = join(" ",
     "gsnap -t ", $self->nb_threads,

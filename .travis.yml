@@ -10,6 +10,7 @@ addons:
       - cpanminus
       - libdist-zilla-perl
       - ncbi-blast+
+      - rna-star
 before_install:
   # Install latest R version
   #- sudo add-apt-repository https://cloud.r-project.org/bin/linux/ubuntu trusty/
@@ -34,3 +35,5 @@ script:
   - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
   - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz 
   - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
+  - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index_star --star
+  - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
