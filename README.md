@@ -63,7 +63,7 @@ Options:
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
       --max-splice-length 
-                          Splice with greater length are considered as chimeric junctions (default $max_splice_length)
+                          Splice with greater length are considered as chimeric junctions (default 1000000)
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
 		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
@@ -177,6 +177,8 @@ export PERL5LIB=$HOME/.local/lib/perl5:$PERL5LIB
 | alignment_identity      | Float | Bam         | bam                            | Fraction of exact match over the query alignment length (splices do not count)                     |
 | nb_hit                  | Int   | Bam         | bam                            | Number of alignment given for the contig (NH field)                                                |
 | nb_mismatches           | Int   | Bam         | bam                            | Number of mismatches in the alignment (NM field)                                                   |
+| is_chimeric             | Bool  | ChimericRNA | Chimeric.out.junction (STAR)   | The contig contains a chimeric junctions                                                           |
+| chimeric_junctions      | Str   | ChimericRNA | Chimeric.out.junction (STAR)   | List of chimeric junctions (format: `chr1:pos1:strand1|chr2:pos2:trand`)                           |
 | gene_id                 | Str   | Annotations | gff                            | Overlapping gene ID (from GFF ID field). On the same strand if --stranded option.                  |
 | gene_symbol             | Str   | Annotations | gff                            | Overlapping gene symbol (from GFF Name field). On the same strand if --stranded option.            |
 | gene_strand             | Char  | Annotations | gff                            | Overlapping gene strand (+/-). On the same strand if --stranded option.                            |
