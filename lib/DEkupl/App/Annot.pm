@@ -38,6 +38,7 @@ sub BUILD {
   my $deg_padj_threshold = 0.05;
   my $contig_color_mode = 1;
   my $max_splice_length = 100000;
+  my $adapters_fasta;
 
   GetOptions(
       "help"             => \$help,
@@ -56,6 +57,7 @@ sub BUILD {
       "p|deg-padj=f"        => \$deg_padj_threshold,
       "max-splice-length=i" => \$max_splice_length,
       "contig-color=i"      => \$contig_color_mode,
+      "adapters=s"          => \$adapters_fasta,
       "version"             => \$version,
   ) or pod2usage(-verbose => 1);
 
@@ -110,7 +112,7 @@ sub BUILD {
   $contigs->loadContigsDB($contigs_db);
 
   # Remove contigs matching adapters
-  my $remove_adapters = DEkupl::RemoveAdapters->new(verbose => $verbose);
+  my $remove_adapters = DEkupl::RemoveAdapters->new(verbose => $verbose, fasta => $adapters_fasta);
   DEkupl::Utils::printStep(\$step,"Remove contigs matching adapters");
   $remove_adapters->removeAdapterContigs($contigs_db);
 
@@ -276,6 +278,7 @@ Options:
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
 		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
+      --adapters STR      FASTA file with sequence to filter out (default : illumina adapters)
       -h,--help           show this help message and exit
       -v,--verbose        print additionnal debug messages
 END

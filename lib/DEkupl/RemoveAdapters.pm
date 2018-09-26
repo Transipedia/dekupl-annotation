@@ -12,6 +12,12 @@ has 'nb_threads' => (
   default => 1
 );
 
+has 'fasta' => (
+  is => 'ro',
+  isa => 'Str',
+  default => undef,
+);
+
 sub BUILD {
   my $self = shift;
   DEkupl::Utils::checkBlastnVersion();
@@ -310,7 +316,13 @@ sub _getAdaptersFasta {
 
 sub _createBlastIndex {
   my $self = shift;
-  my $fasta = $self->_getAdaptersFasta();
+  my $fasta;
+  # Use default adapters of fasta file supplied by the user
+  if(defined $self->fasta) {
+    $fasta = $self->fasta;
+  } else {
+    $fasta = $self->_getAdaptersFasta();
+  }
   my $blast_index_basename = File::Temp->new(UNLINK => 1, SUFFIX => '');
   my $logs = File::Temp->new(UNLINK => 0, SUFFIX => '.log');
   $self->verboseLog("Create BLAST Index, basename $blast_index_basename");
