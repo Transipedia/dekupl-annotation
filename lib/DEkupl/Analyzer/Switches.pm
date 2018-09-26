@@ -251,7 +251,7 @@ normalizedGeneCounts  <- read.delim(normalized_gene_counts_file,check.names=F)
 
 #intersect KALLISTO gene IDs & DEKUPL gene IDs
 tab_counts_DEkupl     <- tab_counts_DEkupl[which(tab_counts_DEkupl\$gene_id \%in% normalizedGeneCounts\$gene_id),]
-normalizedGeneCounts  <- normalizedGeneCounts[which(normalizedGeneCounts\$gene_id \%in% tab_counts_DEkupl$\gene_id),]
+normalizedGeneCounts  <- normalizedGeneCounts[which(normalizedGeneCounts\$gene_id \%in% tab_counts_DEkupl\$gene_id),]
 tab_counts_Kallisto   <- merge(tab_counts_DEkupl,normalizedGeneCounts, by.x="gene_id", by.y="gene_id", all.x=T, all.y=F)
 
 #reorganize columns in order to have contig ID, gene ID & KALLISTO counts (same order as tab_counts_DEkupl)
