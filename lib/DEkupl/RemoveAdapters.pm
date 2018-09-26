@@ -14,8 +14,6 @@ has 'nb_threads' => (
 
 has 'fasta' => (
   is => 'ro',
-  isa => 'Str',
-  default => undef,
 );
 
 sub BUILD {
