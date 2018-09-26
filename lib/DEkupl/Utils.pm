@@ -407,7 +407,7 @@ sub checkSTARVersion {
   my $min_version = "2.5.3";
   if(system("STAR --version > /dev/null") == 0) {
     # STAR_2.5.3a
-    my ($version) = `STAR --version` =~ /STAR_(\S+)[a-z]$/;
+    my ($version) = `STAR --version` =~ /(\d+\.\d+\.\d+)/;
     die "STAR version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
     print STDERR "Using STAR version $version\n";
   } else {
