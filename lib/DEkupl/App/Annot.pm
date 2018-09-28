@@ -164,6 +164,7 @@ sub BUILD {
         index_dir   => "$index_dir/star",
         nb_threads  => $nb_threads,
         verbose     => $verbose,
+        max_splice_length => $max_splice_length,
       );
       mkdir "$output_dir/STAR" if !-e "$output_dir/STAR/";
       $star->generateChimericJunctions($fasta_file,"$output_dir/STAR");
@@ -173,7 +174,6 @@ sub BUILD {
       contigs_db        => $contigs_db,
       is_stranded       => $is_stranded,
       chimeric_file     => $chimeric_file,
-      max_splice_length => $max_splice_length,
     );
     push @analyzers, $chimeric_analyzer;
   }
