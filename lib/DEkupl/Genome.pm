@@ -31,5 +31,14 @@ has 'fasta_file' => (
   }
 );
 
+sub genomeLength {
+  my $self = shift;
+  my $genome_length = 0;
+  foreach my $l ($self->allReferencesLength) {
+    $genome_length += $l;
+  }
+  return $genome_length;
+}
+
 no Moose;
 __PACKAGE__->meta->make_immutable;
