@@ -305,7 +305,7 @@ END
 
 sub _getAdaptersFasta {
   my $self = shift;
-  my $adapters_fasta = File::Temp->new(UNLINK => 0, SUFFIX => '.fa');
+  my $adapters_fasta = File::Temp->new(UNLINK => 1, SUFFIX => '.fa');
   $self->verboseLog("Generate FASTA with adapters in $adapters_fasta");
   print $adapters_fasta $fasta_content;
   close($adapters_fasta);
@@ -333,7 +333,6 @@ sub _createBlastIndex {
     ">> $logs",
   );
   system($command) == 0 or die("Blast db creation failed, see logs in $logs");
-  unlink $fasta;
   unlink $logs;
   return $blast_index_basename;
 }
