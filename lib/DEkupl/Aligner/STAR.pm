@@ -49,6 +49,10 @@ sub generateChimericJunctions {
   while(my $entry = $seq_it->()) {
     if(length($entry->{seq}) > 650) {
       $entry->{seq} = substr $entry->{seq}, 0, 650;
+    # We found bug in STAR for short contigs, causing segmentation fault
+    # Also having contigs > 50 will result in more accurate chimeric detection
+    } elsif(length($entry->{seq}) < 50) {
+      next;
     }
     print $fasta_fh ">".$entry->{name}."\n".$entry->{seq}."\n";
   }

@@ -424,4 +424,9 @@ sub printStep {
   print STDERR " $message\n";
 }
 
+sub log2 {
+  my $n = shift;
+  return log($n)/log(2);
+}
+
 1;

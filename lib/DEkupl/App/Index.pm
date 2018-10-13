@@ -4,6 +4,7 @@ package DEkupl::App::Index;
 use Moose;
 use Getopt::Long;
 use File::Temp qw/ tempdir /;
+use List::Util qw/ min /;
 
 use DEkupl;
 use DEkupl::Annotations;
@@ -64,9 +65,11 @@ sub BUILD {
 
   DEkupl::Utils::printStep(\$step, "Parsing FASTA file to load reference names");
   my $genome = DEkupl::Genome->new(fasta_file => $fasta_file);
+  my $genome_length = $genome->genomeLength();
   foreach my $ref ($genome->allReferences) {
     print STDERR "reference found: $ref\n";
   }
+  print STDERR "Genome length is $genome_length\n";
   
   if(!-e $index_fasta) {
     DEkupl::Utils::printStep(\$step, "Saving gzipped FASTA file to index dir");
@@ -82,7 +85,7 @@ sub BUILD {
   if(-e $index_gff) {
     DEkupl::Utils::printStep(\$step, "Skip GFF file (already exists)");
   } else {
-    DEkupl::Utils::printStep(\$step, "Saving GFF file (already exists)");
+    DEkupl::Utils::printStep(\$step, "Saving GFF file");
     my $index_gff_fh = DEkupl::Utils::getWritingFileHandle($index_gff);
     my $gff_it = DEkupl::Utils::gffFileIterator($gff_file,'gff3');
 
@@ -169,6 +172,12 @@ sub BUILD {
       my $tmp_fasta = File::Temp->new(UNLINK => 1, SUFFIX => '.fa');
       system("gunzip -c $index_fasta > $tmp_fasta");
 
+
+      # Optimize --genomeSAindexNbases
+      # default: 14
+      # int: length (bases) of the SA pre-indexing string. Typically between 10 and 15. Longer strings will use much more memory, but allow faster searches. For small genomes, the parameter –genomeSAindexNbases must be scaled down to min(14, log2(GenomeLength)/2 - 1).
+      my $genome_SA_index_N_bases = int(min(14, DEkupl::Utils::log2($genome_length)/2 - 1));
+
       # TODO We should use the Annotations when construction STAR index!!!
       my $command = join(' ',
         "STAR",
@@ -176,8 +185,11 @@ sub BUILD {
         "--runMode genomeGenerate",
         "--genomeDir $index_dir/star",
         "--genomeFastaFiles $tmp_fasta",
+        "--genomeSAindexNbases $genome_SA_index_N_bases",
         "2> $star_log"
       );
+
+      print STDERR "Creating STAR index: $command\n";
       system($command) == 0 or die "Error in STAR index building (see logs in $star_log)";
     }
   }
