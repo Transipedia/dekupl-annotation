@@ -28,14 +28,13 @@ test:
     - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
 
 delivery-conda:
-  image: registry.gitlab.com/transipedia/dekupl-annotation:base
+  image: continuumio/miniconda3:4.5.11
   stage: deploy
   only:
     - tags
   script:
-    - wget -q https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
+    - apt-get update -q -y
+    - apt-get install -y build-essential cpanminus libdist-zilla-perl
     - conda config --set always_yes yes --set changeps1 no
     - conda config --add default_channels https://repo.anaconda.com/pkgs/pro
     - conda config --add default_channels https://repo.anaconda.com/pkgs/free
