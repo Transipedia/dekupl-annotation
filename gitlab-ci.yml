@@ -1,0 +1,10 @@
+docker_base:
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token "$CI_REGISTRY" --password-stdin
+  script: ./scripts/docker-base.sh
+  only:
+    changes:
+      - Dockerfile.base

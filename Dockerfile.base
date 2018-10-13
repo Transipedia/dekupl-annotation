@@ -1,0 +1,73 @@
+FROM perl:5
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    less \
+    locales \
+    wget \
+    git \
+    ca-certificates \
+    fonts-texgyre \
+    cmake \
+    autoconf \
+    automake \
+    make \
+    gcc \
+    zlib1g-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libcurl4-gnutls-dev \
+    libssl-dev \
+    libncurses5-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# Installing samtools
+ENV SAMTOOLS_VERSION 1.9
+RUN wget -q https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2 \
+  && tar xfj samtools-${SAMTOOLS_VERSION}.tar.bz2 \
+  && cd samtools-${SAMTOOLS_VERSION} \
+  && ./configure --prefix=/usr \
+  && make && make install
+
+# Installing gsnap
+ENV GSNAP_VERSION 2018-05-30
+RUN wget -q http://research-pub.gene.com/gmap/src/gmap-gsnap-${GSNAP_VERSION}.tar.gz \
+  && tar -xzf gmap-gsnap-${GSNAP_VERSION}.tar.gz \
+  && cd gmap-${GSNAP_VERSION} \
+  && ./configure --prefix=/usr \
+  && make && make install
+
+# Installing star
+ENV STAR_VERSION 2.6.1b
+RUN wget -q https://github.com/alexdobin/STAR/archive/${STAR_VERSION}.tar.gz \
+  && tar -xzf ${STAR_VERSION}.tar.gz \
+  && cd STAR-${STAR_VERSION}/source \
+  && make STAR && mv STAR /usr/bin
+
+
+# Installing R
+ENV R_BASE_VERSION 3.3.3
+## Now install R and littler, and create a link for littler in /usr/local/bin
+## Also set a default CRAN repo, and make sure littler knows about it too
+## Also install stringr to make dococt install (from source) easier
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    littler \
+    r-cran-littler \
+    r-cran-stringr \
+    r-base=${R_BASE_VERSION}-* \
+    r-base-dev=${R_BASE_VERSION}-* \
+    r-recommended=${R_BASE_VERSION}-* \
+      && echo 'options(repos = c(CRAN = "https://cloud.r-project.org/"))' >> /etc/R/Rprofile.site \
+      && echo 'source("/etc/R/Rprofile.site")' >> /etc/littler.r \
+  && ln -s /usr/lib/R/site-library/littler/examples/install.r /usr/local/bin/install.r \
+  && ln -s /usr/lib/R/site-library/littler/examples/install2.r /usr/local/bin/install2.r \
+  && ln -s /usr/lib/R/site-library/littler/examples/installGithub.r /usr/local/bin/installGithub.r \
+  && ln -s /usr/lib/R/site-library/littler/examples/testInstalled.r /usr/local/bin/testInstalled.r \
+  && install.r docopt \
+  && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
+&& rm -rf /var/lib/apt/lists/*
+
+# Installing R dependencies
+COPY install_r_packages.R .
+RUN Rscript install_r_packages.R
