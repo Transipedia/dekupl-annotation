@@ -47,7 +47,7 @@ delivery-conda:
     - source activate build
     - conda info -a
     - dzil build --in build
-    - conda build --user transipedia --token $ANACONDA_TOKEN build/recipe
+    - conda build build/recipe #--user transipedia --token $ANACONDA_TOKEN
 
 # delivery-docker:
 #   image: docker:latest
