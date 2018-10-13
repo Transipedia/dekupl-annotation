@@ -123,7 +123,7 @@ This will create a conda environment dekupl (if missing) and install dekupl run 
 #### Run dekupl-annotation
 ```
 source activate dekupl
-dekupl-annotation index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
 ```
 
 
