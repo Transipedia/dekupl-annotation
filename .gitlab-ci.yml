@@ -1,6 +1,6 @@
 docker_base:
   image: docker:stable
-  tags:
+  stage:
     - build
   services:
     - docker:dind
