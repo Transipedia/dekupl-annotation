@@ -30,8 +30,8 @@ test:
 delivery-conda:
   image: registry.gitlab.com/transipedia/dekupl-annotation:base
   stage: deploy
-  # only:
-  #   - tags
+  only:
+    - tags
   script:
     - wget -q https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
@@ -47,7 +47,7 @@ delivery-conda:
     - source activate build
     - conda info -a
     - dzil build --in build
-    - conda build build/recipe #--user transipedia --token $ANACONDA_TOKEN
+    - conda build --user transipedia --token $ANACONDA_TOKEN build/recipe
 
 delivery-docker:
   image: docker:latest
