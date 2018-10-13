@@ -28,13 +28,14 @@ test:
     - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
 
 delivery-conda:
-  image: continuumio/miniconda3:4.5.11
+  image: registry.gitlab.com/transipedia/dekupl-annotation:base
   stage: deploy
   only:
     - tags
   script:
-    - apt-get update -q -y
-    - apt-get install -y build-essential
+    - wget -q https://repo.continuum.io/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O miniconda.sh;
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
     - conda config --set always_yes yes --set changeps1 no
     - conda config --add default_channels https://repo.anaconda.com/pkgs/pro
     - conda config --add default_channels https://repo.anaconda.com/pkgs/free
@@ -45,7 +46,8 @@ delivery-conda:
     - conda create -n build anaconda-client conda-build
     - source activate build
     - conda info -a
-    - conda build --user transipedia --token $ANACONDA_TOKEN recipe
+    - dzil build --in build
+    - conda build --user transipedia --token $ANACONDA_TOKEN build/recipe
 
 delivery-docker:
   image: docker:latest
@@ -57,4 +59,4 @@ delivery-docker:
   script:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - docker build --pull -t transipedia/dekupl-annotation -t transipedia/dekupl-annotation:$CI_COMMIT_REF_NAME .
-    - docker push transipedia/dekupl-run
+    - docker push transipedia/dekupl-annotation
