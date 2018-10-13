@@ -118,7 +118,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 ```
 conda install -n dekupl -y -m --override-channels -c transipedia -c bioconda -c conda-forge -c https://repo.anaconda.com/pkgs/main -c https://repo.anaconda.com/pkgs/free -c https://repo.anaconda.com/pkgs/pro dekupl-annotation
 ```
-This will create a conda environment dekupl (if missing) and install dekupl run inside, the order of the parameters is important.
+This will create a conda environment dekupl (if missing) and install dekupl-annotation inside, the order of the parameters is important.
 
 #### Run dekupl-annotation
 ```
