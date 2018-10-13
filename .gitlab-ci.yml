@@ -1,5 +1,7 @@
 docker_base:
   image: docker:stable
+  tags:
+    - build
   services:
     - docker:dind
   before_script:
@@ -7,7 +9,6 @@ docker_base:
   script:
     - docker build -t "$CI_REGISTRY_IMAGE":base -f Dockerfile.base .
     - docker push "$CI_REGISTRY_IMAGE":base
-
-  # only:
-  #   changes:
-  #     - Dockerfile.base
+  only:
+    changes:
+      - Dockerfile.base

@@ -19,6 +19,10 @@ RUN apt-get update \
     libcurl4-gnutls-dev \
     libssl-dev \
     libncurses5-dev \
+    zlib1g-dev \
+    cpanminus \
+    libdist-zilla-perl \
+    ncbi-blast+ \
   && rm -rf /var/lib/apt/lists/*
 
 # Installing samtools
