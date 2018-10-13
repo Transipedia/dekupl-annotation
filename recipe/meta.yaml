@@ -1,13 +1,12 @@
 package:
   name: dekupl-annotation
-  version: "1.1"
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '') }}
 
 source:
   path: ..
-  # git_url: https://github.com/Transipedia/dekupl-annotation
 
 build:
-  number: 14
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   rpaths:
     - lib/
     - lib/R/lib/
@@ -45,5 +44,3 @@ about:
   home: https://github.com/Transipedia/dekupl-annotation
   license: MIT
   # license_file: LICENSE
-
-
