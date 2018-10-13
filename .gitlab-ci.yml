@@ -1,7 +1,6 @@
 docker_base:
   image: docker:stable
-  stage:
-    - build
+  stage: build
   services:
     - docker:dind
   before_script:
