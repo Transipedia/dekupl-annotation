@@ -20,12 +20,14 @@ RUN apt-get update \
     liblzma-dev \
     libcurl4-gnutls-dev \
     libssl-dev \
+    libghc-bzlib-dev \
     libncurses5-dev \
     zlib1g-dev \
     cpanminus \
     libdist-zilla-perl \
-    ncbi-blast+ \
-  && rm -rf /var/lib/apt/lists/*
+    ncbi-blast+
+
+WORKDIR /tmp
 
 # Installing samtools
 ENV SAMTOOLS_VERSION 1.9
@@ -77,3 +79,7 @@ RUN apt-get update \
 # Installing R dependencies
 COPY install_r_packages.R .
 RUN Rscript install_r_packages.R
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
+
+WORKDIR /root

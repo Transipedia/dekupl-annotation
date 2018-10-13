@@ -6,8 +6,22 @@ docker_base:
   before_script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script:
-    - docker build -t "$CI_REGISTRY_IMAGE":base -f Dockerfile.base .
+    - docker pull "$CI_REGISTRY_IMAGE":base || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE":base -t "$CI_REGISTRY_IMAGE":base -f Dockerfile.base .
     - docker push "$CI_REGISTRY_IMAGE":base
   only:
     changes:
       - Dockerfile.base
+
+test:
+  image: registry.gitlab.com/transipedia/dekupl-annotation:base
+  stage: test
+  before_script:
+    # Install dkpl-annot with Dist-zilla and CPAN-minus
+    - dzil install --install-command 'cpanm .'
+  script:
+    - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+    - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz
+    - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
+    - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index_star --star
+    - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
