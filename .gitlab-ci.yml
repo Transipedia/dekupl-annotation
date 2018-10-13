@@ -3,7 +3,7 @@ docker_base:
   services:
     - docker:dind
   before_script:
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token "$CI_REGISTRY" --password-stdin
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script: ./scripts/docker-base.sh
   only:
     changes:
