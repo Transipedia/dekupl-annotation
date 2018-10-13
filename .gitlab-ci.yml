@@ -30,8 +30,8 @@
 delivery-conda:
   image: continuumio/miniconda3:4.5.11
   stage: deploy
-  # only:
-  #   - tags
+  only:
+    - tags
   script:
     - apt-get update -q -y
     - apt-get install -y build-essential cpanminus libdist-zilla-perl
@@ -46,7 +46,7 @@ delivery-conda:
     - source activate build
     - conda info -a
     - dzil build --in build
-    - conda build --user transipedia --token $ANACONDA_TOKEN build/recipe
+    - conda build --user transipedia --token $ANACONDA_TOKEN recipe
 
 # delivery-docker:
 #   image: docker:latest
