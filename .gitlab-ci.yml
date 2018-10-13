@@ -1,31 +1,31 @@
-# docker_base:
-#   image: docker:stable
-#   stage: build
-#   services:
-#     - docker:dind
-#   before_script:
-#     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
-#   script:
-#     - docker pull "$CI_REGISTRY_IMAGE":base || true
-#     - docker build --cache-from "$CI_REGISTRY_IMAGE":base -t "$CI_REGISTRY_IMAGE":base -f Dockerfile.base .
-#     - docker push "$CI_REGISTRY_IMAGE":base
-#   only:
-#     changes:
-#       - Dockerfile.base
-#       - install_r_packages.R
+docker_base:
+  image: docker:stable
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE":base || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE":base -t "$CI_REGISTRY_IMAGE":base -f Dockerfile.base .
+    - docker push "$CI_REGISTRY_IMAGE":base
+  only:
+    changes:
+      - Dockerfile.base
+      - install_r_packages.R
 
-# test:
-#   image: registry.gitlab.com/transipedia/dekupl-annotation:base
-#   stage: test
-#   before_script:
-#     # Install dkpl-annot with Dist-zilla and CPAN-minus
-#     - dzil install --install-command 'cpanm .'
-#   script:
-#     - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
-#     - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz
-#     - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
-#     - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index_star --star
-#     - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
+test:
+  image: registry.gitlab.com/transipedia/dekupl-annotation:base
+  stage: test
+  before_script:
+    # Install dkpl-annot with Dist-zilla and CPAN-minus
+    - dzil install --install-command 'cpanm .'
+  script:
+    - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+    - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz
+    - dkpl annot -v -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
+    - dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index_star --star
+    - dkpl annot -v -i test_index_star --deg toy/dkpl-run/DEGs.tsv.gz toy/dkpl-run/merged-diff-counts.tsv.gz -o test_STAR
 
 delivery-conda:
   image: continuumio/miniconda3:4.5.11
@@ -48,14 +48,14 @@ delivery-conda:
     - dzil build --in build
     - conda build --user transipedia --token $ANACONDA_TOKEN recipe
 
-# delivery-docker:
-#   image: docker:latest
-#   services:
-#     - docker:dind
-#   stage: deploy
-#   only:
-#     - tags
-#   script:
-#     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-#     - docker build --pull -t transipedia/dekupl-annotation -t transipedia/dekupl-annotation:$CI_COMMIT_REF_NAME .
-#     - docker push transipedia/dekupl-annotation
+delivery-docker:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: deploy
+  only:
+    - tags
+  script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker build --pull -t transipedia/dekupl-annotation -t transipedia/dekupl-annotation:$CI_COMMIT_REF_NAME .
+    - docker push transipedia/dekupl-annotation
