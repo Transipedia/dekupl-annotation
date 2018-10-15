@@ -1,0 +1,46 @@
+package:
+  name: dekupl-annotation
+  version: {{ environ.get('GIT_DESCRIBE_TAG', '') }}
+
+source:
+  path: ..
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  rpaths:
+    - lib/
+    - lib/R/lib/
+
+requirements:
+  host:
+    - perl>5.26.0
+    - perl-module-build
+    - perl-carp
+    - perl-moose
+    - perl-set-intervaltree
+    - perl-test-more
+    - perl-test-exception
+    - perl-json-xs
+
+  run:
+    - perl>5.26.0
+    - perl-carp
+    - perl-moose
+    - perl-set-intervaltree
+    - perl-test-more
+    - perl-test-exception
+    - perl-json-xs
+    - bioconductor-deseq2
+    - gmap
+    - samtools
+    - blast
+    - star
+
+# test:
+#   commands:
+#     - dkpl
+
+about:
+  home: https://github.com/Transipedia/dekupl-annotation
+  license: MIT
+  # license_file: LICENSE

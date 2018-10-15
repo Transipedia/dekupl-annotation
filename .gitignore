@@ -3,3 +3,5 @@
 .DS_Store
 DEkupl_annotation/
 test_index/
+.build
+DEkupl-*

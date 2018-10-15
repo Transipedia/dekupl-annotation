@@ -38,8 +38,8 @@ STAR index is loaded into memory and requires up to 30gb for the human genome.
 
 ### Annotating contigs
 
-Once an index has been constructed you can annotate contigs from a DEkupl-run. 
-The minimal input to run DEkupl-annotation is the contigs file 
+Once an index has been constructed you can annotate contigs from a DEkupl-run.
+The minimal input to run DEkupl-annotation is the contigs file
 (merged-diff-counts.tsv.gz) produced by DEkupl-run. If the input files are stranded,
 you need to add the `--stranded` option, in order to get the annotations on the right strand.
 
@@ -54,9 +54,9 @@ Options:
   Input/Output:
       -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
       -d,--deg FILE       (Optional) {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
-      --norm-gene-counts FILE 
+      --norm-gene-counts FILE
                           (Optional) Normalized gene counts
-      --sample-conditions FILE 
+      --sample-conditions FILE
                           (Optional) Sample conditions. First column is sample name,
                           second column is sample condition)
 
@@ -64,7 +64,7 @@ Options:
       -t,--threads INT    Number of threads (for GSNAP)
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
-      --max-splice-length 
+      --max-splice-length
                           Splice with greater length are considered as chimeric junctions (default 1000000)
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
@@ -84,7 +84,7 @@ Extra file can be supplied to complete the annotation process (see ontolgy table
 If the index was created with the `--star` option, then dkpl-annot will look for chimeric junctions.
 
 
-### Tutorial & toys
+## Tutorial & toys
 
 Toy files are available with this repository to test dkpl-annot.
 
@@ -92,8 +92,7 @@ Toy files are available with this repository to test dkpl-annot.
 dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
 dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/dkpl-run/normalized_counts.tsv --sample-conditions toy/dkpl-run/sample_conditions_full.tsv toy/dkpl-run/merged-diff-counts.tsv.gz
 ```
-
-### Installation
+## Installation
 
 ### Required dependencies
 
@@ -106,6 +105,55 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 ### Optional dependencies
 
 * STAR (version >= 2.5.3) for chimeric RNA
+
+### Run dekupl-annotation with conda
+#### Install conda (miniconda or anaconda)
+
+First you need to install conda, miniconda is harder to use because it comes with nothing installed
+
+```
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+#### Install dekupl-annotation
+
+```
+conda install -n dekupl -y -m --override-channels -c transipedia -c bioconda -c conda-forge -c https://repo.anaconda.com/pkgs/main -c https://repo.anaconda.com/pkgs/free -c https://repo.anaconda.com/pkgs/pro dekupl-annotation
+```
+This will create a conda environment dekupl (if missing) and install dekupl-annotation inside, the order of the parameters is important.
+
+#### Run dekupl-annotation
+```
+source activate dekupl
+dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+```
+
+
+### Run dekupl-annotation with docker
+#### Pull
+```
+docker pull transipedia/dekupl-annotation
+```
+#### Run
+You may need to define some volumes like your input and output directory
+
+#### Example
+ ```
+docker run --rm -v ${PWD}/toy:/data/toy -v ${PWD}/test_index:/data/test_index  transipedia/dekupl-annotation index -g /data/toy/references/GRCh38-chr22.fa.gz -a /data/toy/references/GRCh38-chr22.gff.gz -i /data/test_index
+```
+
+
+### Run dekupl-annotation with singularity
+```
+singularity pull docker://transipedia/dekupl-annotation
+./dekupl-annotation.simg index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+```
+OR
+```
+singularity build dekupl-annotation.img docker://transipedia/dekupl-annotation
+singularity run ./dekupl-annotation.img index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+```
+You don't need to mount any volumes with singularity, but you must have your config.json and your inputs file in the directory where you are running dekupl-annotation.
 
 ### Install from the sources
 
@@ -131,7 +179,7 @@ dzil install --install-command 'cpanm .'
 
 For local install you need to use the `-l LOCAL_DIR` parameter of cpanm.
 Then you need to make sure that the Perl library that have been installed locally
-are available to the path using the `PERL5LIB` environnement variable. 
+are available to the path using the `PERL5LIB` environnement variable.
 
 For example :
 

@@ -88,7 +88,7 @@ sub bamFileIterator {
   my $file = shift;
   my $region = shift;
   $region = "" if !defined $region;
-  
+
   open(my $fh, "-|", "samtools view $file $region" )or die "Cannot open $file, check if samtools are installed.";
 
   return sub {
@@ -200,7 +200,7 @@ sub getFileIterator {
     while(defined $line && $line =~ /^#/) {
       $line = <$fh>;
     }
-    if (defined $line) { 
+    if (defined $line) {
       chomp $line;
       # We parse the line with the appropriate methd
       my $parsed_line = $parsing_method->($line,@parsing_arguments);
@@ -249,8 +249,8 @@ sub parseGFFLine {
       $attributes_hash{$conv_attr{$attr}} = $attributes_hash{$attr};
     }
   }
-  
-  return { 
+
+  return {
     chr        => $chr,
     source     => $source,
     feature    => $feature,
@@ -375,7 +375,7 @@ sub checkGSNAPVersion {
     die "gsnap version ($version) is outdated (version >= $min_version)" if !isVersionGreaterOrEqual($version,$min_version);
     print STDERR "Using GSNAP version $version\n";
   } else {
-    die "samtools is not acessible in the \$PATH";
+    die "gsnap is not acessible in the \$PATH";
   }
 }
 
