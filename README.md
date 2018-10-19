@@ -1,8 +1,21 @@
-<div style="text-align:center"><img src ="dekupl-annot-logo.png" /></div>
+![dekupl-annot logo](dekupl-annot-logo.png)
 
-# DE-kupl Annotation [![Build Status](https://travis-ci.org/Transipedia/dekupl-annotation.svg?branch=new-version)](https://travis-ci.org/Transipedia/dekupl-annotation) [![docker pull](https://img.shields.io/docker/pulls/transipedia/dekupl-annotation.svg)](https://hub.docker.com/r/transipedia/dekupl-annotation/) [![conda install](https://anaconda.org/transipedia/dekupl-annotation/badges/downloads.svg)](https://anaconda.org/Transipedia/dekupl-annotation)
+[![Build Status](https://travis-ci.org/Transipedia/dekupl-annotation.svg?branch=new-version)](https://travis-ci.org/Transipedia/dekupl-annotation) [![docker pull](https://img.shields.io/docker/pulls/transipedia/dekupl-annotation.svg)](https://hub.docker.com/r/transipedia/dekupl-annotation/) [![conda install](https://anaconda.org/transipedia/dekupl-annotation/badges/downloads.svg)](https://anaconda.org/Transipedia/dekupl-annotation)
 
 DE-kupl annotation is part of the DE-kupl package, and performs annotations of DE contigs identified by DE-kupl.
+
+- [Usage](#usage)
+    - [Creating the index](#creating-the-index)
+    - [Annotating contigs](#annotating-contigs)
+- [Tutorial & toys](#tutorial--toys)
+- [Installation](#installation)
+    - [Option 1: Use dekupl-annotation with conda](#option-1-use-dekupl-annotation-with-conda)
+    - [Option 2: Use dekupl-annotation with Docker](#option-2-use-dekupl-annotation-with-docker)
+    - [Option 3: Use dekupl-annotation with singularity](#option-3-use-dekupl-annotation-with-singularity)
+    - [Option 4: Install from the sources (not recommended)](#option-4-install-from-the-sources-not-recommended)
+- [Output files](#output-files)
+- [Ontology](#ontology)
+- [Dev environnement](#dev-environnement)
 
 ## Usage
 
@@ -94,99 +107,83 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 ```
 ## Installation
 
-### Required dependencies
+We recommand tu use [conda](https://anaconda.org/) to install dekupl-annotation, but you can also use Docker, Singularity and manual installation.
 
-* bash (version >= 4.3.46)
-* R (version >= version 3.2.3) with libraries DESeq2
-* GSNAP (version >= 2016-11-07)
-* samtools (version >= 1.3)
-* blast (version >= 2.5.0+)
+### Option 1: Use dekupl-annotation with conda
 
-### Optional dependencies
+- **Step 1: Install conda.** If you do not have a conda distribution installed, we recommend to install miniconda as follows. See [Miniconda website](https://conda.io/miniconda.html) for other installation instructions (ex. for OSX).
+    ```
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
+    ``` 
+- **Step 2: Install dekupl-annotatation**. This will create a dekupl conda environment (if missing) and install dekupl-annotation inside. The order of parameters is important.
+    ```
+    conda install -n dekupl -y -m --override-channels -c transipedia \
+     -c bioconda -c conda-forge -c https://repo.anaconda.com/pkgs/main \
+     -c https://repo.anaconda.com/pkgs/free \
+     -c https://repo.anaconda.com/pkgs/pro dekupl-annotation
+    ```
+- **Step 3: Run dekupl-annotation**. We first activate the conda environement where dekupl-annotation was installed, then we run the software.
+    ```
+    source activate dekupl
+    dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
+    dkpl annot -i test_index toy/dkpl-run/merged-diff-counts.tsv.gz
+    ```
 
-* STAR (version >= 2.5.3) for chimeric RNA
+### Option 2: Use dekupl-annotation with Docker
 
-### Run dekupl-annotation with conda
-#### Install conda (miniconda or anaconda)
+- **Step 1: Retrieve the docker image.**
+    ```
+    docker pull transipedia/dekupl-annotation
+    ```
+- **Step 2: Run dekupl-annotation**.
+    You may need to mount some volumes (input and output directories)
+    ```
+    docker run --rm -v ${PWD}/toy:/data/toy -v ${PWD}/test_index:/data/test_index \
+    transipedia/dekupl-annotation index -g /data/toy/references/GRCh38-chr22.fa.gz \
+    -a /data/toy/references/GRCh38-chr22.gff.gz -i /data/test_index
+    ```
 
-First you need to install conda, miniconda is harder to use because it comes with nothing installed
+### Option 3: Use dekupl-annotation with singularity
 
-```
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-```
-#### Install dekupl-annotation
+One can create a singularity container from the docker image. Two methods are available, they should both work. 
 
-```
-conda install -n dekupl -y -m --override-channels -c transipedia -c bioconda -c conda-forge -c https://repo.anaconda.com/pkgs/main -c https://repo.anaconda.com/pkgs/free -c https://repo.anaconda.com/pkgs/pro dekupl-annotation
-```
-This will create a conda environment dekupl (if missing) and install dekupl-annotation inside, the order of the parameters is important.
+A difference with docker image is that with Singularity, you don't need to mount any volume, but you must have your config.json and your inputs file in the directory where you are running dekupl-annotation.
 
-#### Run dekupl-annotation
-```
-source activate dekupl
-dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
-```
+- **Method 1**
+  ```
+    singularity pull docker://transipedia/dekupl-annotation
+    ./dekupl-annotation.simg index -g toy/references/GRCh38-chr22.fa.gz \
+    -a toy/references/GRCh38-chr22.gff.gz -i test_index
+    ```
+- **Method 2**
+    ```
+    singularity build dekupl-annotation.img docker://transipedia/dekupl-annotation
+    singularity run ./dekupl-annotation.img index -g toy/references/GRCh38-chr22.fa.gz \
+    -a toy/references/GRCh38-chr22.gff.gz -i test_index
+    ```
 
+### Option 4: Install from the sources (not recommended)
 
-### Run dekupl-annotation with docker
-#### Pull
-```
-docker pull transipedia/dekupl-annotation
-```
-#### Run
-You may need to define some volumes like your input and output directory
-
-#### Example
- ```
-docker run --rm -v ${PWD}/toy:/data/toy -v ${PWD}/test_index:/data/test_index  transipedia/dekupl-annotation index -g /data/toy/references/GRCh38-chr22.fa.gz -a /data/toy/references/GRCh38-chr22.gff.gz -i /data/test_index
-```
-
-
-### Run dekupl-annotation with singularity
-```
-singularity pull docker://transipedia/dekupl-annotation
-./dekupl-annotation.simg index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
-```
-OR
-```
-singularity build dekupl-annotation.img docker://transipedia/dekupl-annotation
-singularity run ./dekupl-annotation.img index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
-```
-You don't need to mount any volumes with singularity, but you must have your config.json and your inputs file in the directory where you are running dekupl-annotation.
-
-### Install from the sources
-
-#### Install Dependancies
-
-Dependencies are cpan-minus (aka cpanm) and Dist::Zilla :
-
-```
-apt-get install cpanminus libdist-zilla-perl gmap samtools ncbi-blast+
-Rscript install_r_packages.R # Install DESeq2 from bioconductor
-```
-
-#### Global install
-
-The following command, will clone the repository and install dkpl-annot globaly with dzil and cpanm.
-
-```
-git clone https://github.com/Transipedia/dekupl-annotation.git && cd dekupl-annotation
-dzil install --install-command 'cpanm .'
-```
-
-#### Local install
-
-For local install you need to use the `-l LOCAL_DIR` parameter of cpanm.
-Then you need to make sure that the Perl library that have been installed locally
-are available to the path using the `PERL5LIB` environnement variable.
-
-For example :
-
-```
-dzil install --install-command 'cpanm -l $HOME/.local .'
-export PERL5LIB=$HOME/.local/lib/perl5:$PERL5LIB
-```
+- **Step 1: Install dependancies**. Before using Dekupl-annotation, install these dependencies:
+    - **Required**: bash (version >= 4.3.46), R (version >= version 3.2.3) with libraries DESeq2, GSNAP (version >= 2016-11-07), samtools (version >= 1.3) & blast (version >= 2.5.0+)
+    - **Optional** : STAR (version >= 2.5.3) for chimeric RNA
+    - Installing dependancies on Linux Debian
+    ```
+    apt-get install cpanminus libdist-zilla-perl gmap samtools ncbi-blast+ rna-star
+    Rscript install_r_packages.R # Install DESeq2 from bioconductor
+    ```
+- **Step 2: Install dekupl-annot**
+    - **Global install**: The following command, will clone the repository and install dkpl-annot globaly with dzil and cpanm.
+    ```
+    git clone https://github.com/Transipedia/dekupl-annotation.git && cd dekupl-annotation
+    dzil install --install-command 'cpanm .'
+    ```
+    - **Local install**: For local install you need to use the `-l LOCAL_DIR` parameter of cpanm. Then you need to make sure that the Perl library that have been installed locally are available to the path using the `PERL5LIB` environnement variable.
+    ```
+    dzil install --install-command 'cpanm -l $HOME/.local .'
+    export PERL5LIB=$HOME/.local/lib/perl5:$PERL5LIB
+    ```
 
 ## Output files
 
