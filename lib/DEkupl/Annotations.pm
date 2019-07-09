@@ -79,8 +79,7 @@ sub loadFromGFF {
     $parent = DEkupl::Utils::getAtomicGeneID($parent) if defined $parent;
 
     # Add the id to parent relationship
-    if(defined $parent && defined $id) {
-      # Todo we should only store that information fore transcript_id to gene_id
+    if($annot->{feature} eq 'transcript' && defined $parent && defined $id) {
       $id_to_parents{$id} = $parent;
     }
     # next if !defined $id;
