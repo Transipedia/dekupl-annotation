@@ -88,7 +88,7 @@ sub BUILD {
 
     # Slect only primary alignments
     next if $sam_line->{flag} & $flags{SECONDARY_ALIGNMENT} || $sam_line->{flag} & $flags{SUPPLEMENTARY_ALIGNMENT};
- 
+
     # The tag is the query name
     my $tag = $sam_line->{qname};
 
@@ -110,7 +110,7 @@ sub BUILD {
     }
 
     $contig->{chromosome} = $sam_line->{rname};
-    $contig->{start} = $sam_line->{pos};
+    $contig->{start} = $sam_line->{pos}-1;
     $contig->{cigar} = $sam_line->{original_cigar};
 
     # Set strand if we are in 'strand-specific' mode
@@ -121,9 +121,9 @@ sub BUILD {
     my %cig_stats = %{_computeStatsFromCigar($sam_line->{cigar}, $contig->{strand})};
 
     $contig->{nb_insertion}   = $cig_stats{nb_insertion};
-    $contig->{nb_deletion}    = $cig_stats{nb_deletion}; 
+    $contig->{nb_deletion}    = $cig_stats{nb_deletion};
     $contig->{nb_splice}      = $cig_stats{nb_splice};
-    $contig->{end}            = $sam_line->{pos} + $cig_stats{ref_aln_length} - 1;
+    $contig->{end}            = $sam_line->{pos}-1 + $cig_stats{ref_aln_length} - 1;
     $contig->{clipped_3p}     = $cig_stats{clipped_3p};
     $contig->{clipped_5p}     = $cig_stats{clipped_5p};
     $contig->{is_clipped_3p}  = DEkupl::Utils::booleanEncoding($cig_stats{is_clipped_3p});
@@ -136,7 +136,7 @@ sub BUILD {
     # Extracting information from extented SAM fields
     my $nb_hit      = $sam_line->{extended_fields}->{NH};
     my $nb_mismatch = $sam_line->{extended_fields}->{NM};
-    
+
     $contig->{nb_hit}       = $nb_hit if defined $nb_hit;
     $contig->{nb_mismatch}  = $nb_mismatch if defined $nb_mismatch;
 
@@ -150,7 +150,7 @@ sub BUILD {
 
     # Compute alignemnt identity
     $contig->{alignment_identity} = ($cig_stats{nb_match} - $nb_mismatch) / $cig_stats{query_aln_length};
-    
+
     # Save contig
     $self->contigs_db->saveContig($contig);
 
@@ -180,8 +180,8 @@ sub BUILD {
     if($self->contig_color_mode == 2) {
       ($light_color,$hard_color) = ($hard_color,$light_color);
     }
-    
-    # Intensity is scaled on abs(log2FC). 
+
+    # Intensity is scaled on abs(log2FC).
     if(defined $contig->{strand}) {
       my $scaled_color = DEkupl::Utils::scaleValue($light_color,$hard_color,$self->contigs->min_abs_log2FC,$self->contigs->max_abs_log2FC,abs($contig->{log2FC}));
       $scaled_color = int($scaled_color);
@@ -296,7 +296,7 @@ sub _computeStatsFromCigar {
 
   my $cur_bloc_start = 0;
   my $cur_block_size = 0;
-     
+
   foreach my $cigel (@{$cigar}) {
     if($cigel->{op} =~ /[MX=]/ ) {
       $cur_block_size               += $cigel->{nb};
@@ -325,7 +325,7 @@ sub _computeStatsFromCigar {
 
   $cig_stats{block_sizes}   = \@block_sizes;
   $cig_stats{block_starts}  = \@block_starts;
-  
+
   return \%cig_stats;
 }
 

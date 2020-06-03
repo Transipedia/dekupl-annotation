@@ -12,7 +12,6 @@ use DEkupl::Contigs;
 use DEkupl::ContigsDB;
 use DEkupl::Annotations;
 use DEkupl::IntervalQuery;
-use DEkupl::RepeatAnnotation;
 
 use DEkupl::Aligner::GSNAP;
 use DEkupl::Aligner::STAR;
@@ -40,7 +39,6 @@ sub BUILD {
   my $contig_color_mode = 1;
   my $max_splice_length = 100000;
   my $adapters_fasta;
-  my $repeat_fasta;
 
   GetOptions(
       "help"             => \$help,
@@ -60,7 +58,6 @@ sub BUILD {
       "max-splice-length=i" => \$max_splice_length,
       "contig-color=i"      => \$contig_color_mode,
       "adapters=s"          => \$adapters_fasta,
-      "repeat=s"            => \$repeat_fasta,
       "version"             => \$version,
   ) or pod2usage(-verbose => 1);
 
@@ -103,7 +100,7 @@ sub BUILD {
   # Create contigs object
   my $contigs = DEkupl::Contigs->new(
     verbose       => $verbose,
-    contigs_file  => $contigs_file,
+    contigs_file  => $contigs_file, 
     is_stranded   => $is_stranded
   );
   push @analyzers, $contigs;
@@ -111,35 +108,29 @@ sub BUILD {
   # Create contigs DB
   my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX", CLEANUP => 1);
   my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
-  my $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Loading contigs DB into $tempdir : $datestring");
+  DEkupl::Utils::printStep(\$step,"Loading contigs DB into $tempdir");
   $contigs->loadContigsDB($contigs_db);
 
   # Remove contigs matching adapters
   my $remove_adapters = DEkupl::RemoveAdapters->new(verbose => $verbose, fasta => $adapters_fasta);
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Remove contigs matching adapters : $datestring");
+  DEkupl::Utils::printStep(\$step,"Remove contigs matching adapters");
   $remove_adapters->removeAdapterContigs($contigs_db);
 
   # Create FASTA file
   my $fasta_file = "$output_dir/contigs.fa.gz";
   if(-e $fasta_file && $debug) {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Skipping FASTA file : $datestring");
+    DEkupl::Utils::printStep(\$step,"Skipping FASTA file");
   } else {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Generating FASTA file : $datestring");
+    DEkupl::Utils::printStep(\$step,"Generating FASTA file");
     $contigs->generateFasta($fasta_file);
   }
 
   # Generate BAM with GSNAP
   my $bam_file = "$output_dir/contigs.bam";
   if(-e $bam_file && $debug) {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Skipping GSNAP mapping : $datestring");
+    DEkupl::Utils::printStep(\$step,"Skipping GSNAP mapping");
   } else {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Running GSNAP : $datestring");
+    DEkupl::Utils::printStep(\$step,"Running GSNAP");
     my $gsnap = DEkupl::Aligner::GSNAP->new(
       index_dir   => $index_dir,
       index_name  => "gsnap",
@@ -149,8 +140,7 @@ sub BUILD {
   }
 
   # Annotating contigs with BAM from GSNAP
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Parsing BAM file : $datestring");
+  DEkupl::Utils::printStep(\$step,"Parsing BAM file");
   my $bed_file = "$output_dir/diff_contigs.bed.gz";
   my $bam_analyzer = DEkupl::Analyzer::BAM->new(
     verbose           => $verbose,
@@ -167,11 +157,9 @@ sub BUILD {
   if(-e "$index_dir/star") {
     my $chimeric_file = "$output_dir/STAR/Chimeric.out.junction";
     if(-e $chimeric_file) {
-      $datestring = gmtime();
-      DEkupl::Utils::printStep(\$step,"Skipping STAR mapping : $datestring");
+      DEkupl::Utils::printStep(\$step,"Skipping STAR mapping");
     } else {
-      $datestring = gmtime();
-      DEkupl::Utils::printStep(\$step,"Running STAR : $datestring");
+      DEkupl::Utils::printStep(\$step,"Running STAR");
       my $star = DEkupl::Aligner::STAR->new(
         index_dir   => "$index_dir/star",
         nb_threads  => $nb_threads,
@@ -192,18 +180,15 @@ sub BUILD {
 
   # TODO: We should do that in separate space, in order to unload annotations from
   # memory as soon as the annotation is done remove them after annotation.
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Loading annotations into memory : $datestring");
+  DEkupl::Utils::printStep(\$step,"Loading annotations into memory");
   my $annotations = DEkupl::Annotations->new(verbose => $verbose);
   $annotations->loadFromGFF($gff_file,'gff3');
 
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Loading annotations to the interval tree : $datestring");
+  DEkupl::Utils::printStep(\$step,"Loading annotations to the interval tree");
   my $interval_query = DEkupl::IntervalQuery->new();
   $interval_query->loadAnnotations($annotations);
 
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Annotating contigs : $datestring");
+  DEkupl::Utils::printStep(\$step,"Annotating contigs");
   my $loci_file = "$output_dir/ContigsPerLoci.tsv.gz";
   my $annot_analyzer = DEkupl::Analyzer::Annotations->new(
     verbose         => $verbose,
@@ -216,8 +201,7 @@ sub BUILD {
 
   # If we have DEG (Differentially expressed genes, we add appened information to the contigs)
   if(defined $deg_file) {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Adding DEG informations : $datestring");
+    DEkupl::Utils::printStep(\$step,"Adding DEG informations");
     my $deg_analyzer = DEkupl::Analyzer::DEG->new(
       verbose     => $verbose,
       contigs_db  => $contigs_db,
@@ -229,8 +213,7 @@ sub BUILD {
   }
 
   if(defined $normalized_gene_counts_file && defined $sample_conditions_file) {
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Computing switches : $datestring");
+    DEkupl::Utils::printStep(\$step,"Computing switches");
     my @sample_names = $contigs->all_samples;
     my $switches_analyzer = DEkupl::Analyzer::Switches->new(
       verbose                     => $verbose,
@@ -243,23 +226,13 @@ sub BUILD {
     push @analyzers, $switches_analyzer;
   }
 
-  #Annotation of repeat sequences
-  if(defined $repeat_fasta) {
-    my $repeat_annot = DEkupl::RepeatAnnotation->new(verbose => $verbose, fasta => $repeat_fasta);
-    $datestring = gmtime();
-    DEkupl::Utils::printStep(\$step,"Annotate repeat sequences : $datestring");
-    mkdir "$output_dir/RepeatAnnot" if !-e "$output_dir/RepeatAnnot/";
-    $repeat_annot->alignRepeats($contigs_db,"$output_dir/RepeatAnnot/");
-    DEkupl::RepeatAnnotation::contigsEntropy($contigs_db,"$output_dir/RepeatAnnot/");
-    push @analyzers, $repeat_annot;
-  }
+
   # TODO we should print automatic headers with descriptions of each fields as
   # in the VCF format!!!
   my $contigs_info_file = "$output_dir/DiffContigsInfos.tsv";
   my $contigs_info_fh   = DEkupl::Utils::getWritingFileHandle($contigs_info_file);
 
-  $datestring = gmtime();
-  DEkupl::Utils::printStep(\$step,"Printing final output in $contigs_info_file : $datestring");
+  DEkupl::Utils::printStep(\$step,"Printing final output in $contigs_info_file");
   # Print headers
   print $contigs_info_fh join("\t",
     map { $_->getHeaders() } @analyzers
@@ -290,9 +263,9 @@ Options:
   Input/Output:
       -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
       -d,--deg FILE       (Optional) {A}vs{B}-DEGs.tsv (diff. genes in "gene_expression" directory from Dekupl-run result)
-      --norm-gene-counts FILE
+      --norm-gene-counts FILE 
                           (Optional) Normalized gene counts
-      --sample-conditions FILE
+      --sample-conditions FILE 
                           (Optional) Sample conditions. First column is sample name,
                           second column is sample condition)
 
@@ -300,13 +273,12 @@ Options:
       -t,--threads INT    Number of threads (for GSNAP)
       -s,--stranded       RNA-Seq is strand-specific.
       -p,--deg-padj       padj diff. gene threshold (default : 0.05)
-      --max-splice-length
+      --max-splice-length 
                           Splice with greater length are considered as chimeric junctions (default 100000)
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
-                                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
+		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
       --adapters STR      FASTA file with sequence to filter out (default : illumina adapters)
-      --repeat STR        FASTA file with repeat sequences
       -h,--help           show this help message and exit
       -v,--verbose        print additionnal debug messages
 END

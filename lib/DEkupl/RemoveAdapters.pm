@@ -351,7 +351,7 @@ sub removeAdapterContigs {
 
   # Generate FASTA file with contigs from contigs db
   $contigs_db->generateFasta($contigs_fasta);
-  
+
   # Run Blastn
   my $command = join(" ",
     "blastn",
@@ -382,7 +382,7 @@ sub removeAdapterContigs {
     }
   }
   unlink $results;
-  
+
   # Delete selected contigs
   foreach my $contig_id (keys %aligned_contigs) {
     $contigs_db->deleteContig($contig_id);

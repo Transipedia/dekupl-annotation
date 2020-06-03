@@ -78,7 +78,7 @@ sub BUILD {
           ($upstream_result,$upstream_dist)   = $self->interval_query->fetchNearest5prim($query);
           ($downstream_result,$downstream_dist) = $self->interval_query->fetchNearest3prim($query);
         }
-        
+
         # Set RV results with contig reverse strand
         $query->strand(DEkupl::Utils::reverseStrand($contig->{strand}));
         $rv_results = $self->interval_query->fetchByRegion($query);
@@ -108,7 +108,7 @@ sub BUILD {
           # Select the closest 5prim gene between the two strand
           # If both are defined we choose the closest
           # Otherwise we chose the one that is defined
-          if(defined $upstream_result_fwd && defined $upstream_result_rv) { 
+          if(defined $upstream_result_fwd && defined $upstream_result_rv) {
             if($upstream_dist_fwd < $upstream_dist_rv) {
               ($upstream_result,$upstream_dist) = ($upstream_result_fwd, $upstream_dist_fwd);
             } else {
@@ -119,7 +119,7 @@ sub BUILD {
           } elsif(defined $upstream_result_rv) {
             ($upstream_result,$upstream_dist) = ($upstream_result_rv, $upstream_dist_rv);
           }
-          
+
           # Select the closest 3prim gene between the two strand
           # If both are defined we choose the closest
           # Otherwise we chose the one that is defined
@@ -287,16 +287,19 @@ sub _selectBestCandidate {
   my $query   = shift;
   my $exonic = 0;
   my $intronic;
-  my $exonic_overlap_length;
+  my $gene_overlap;
+  my $gene_overlap_length;
   my $current_gene;
-
+  my $testing;
+  my $t_file = "/data/work/I2BC/antoine.laine/LUAD/TCGA/testing.txt";
+  open($testing, '>>', $t_file) or die "Cannot open $t_file";
+  print $testing "Contig = ",$query->start,"   ",$query->end,"\n";
   foreach my $res (@{$results}) {
     my $res_type = ref($res);
     # TODO we should do a special treatment when there is multiple genes overlapping
     # the position. Usually we should choose the one that is 'protein_coding' over
     # a non_conding gene!
     if($res_type eq 'DEkupl::Annotations::Gene') {
-      # We do not override possible exonic overlapping genes
       if(!$exonic) {
         $current_gene = $res;
       }
@@ -304,18 +307,24 @@ sub _selectBestCandidate {
       # Genes with exons overlap take over non-exonic gene annotations
       # If multiple exons are overlapping, we take the one with the largest
       # overlapping length
-      my $overlap = min($res->end,$query->end) - max($res->start,$query->start) + 1;
-      if(!defined $exonic_overlap_length || $overlap > $exonic_overlap_length) {
-        $exonic_overlap_length = $overlap;
+      print $testing "Exon","   ",$res->gene->symbol," : ",$res->gene->length,"\n";
+      my $gene_overlap = min($res->gene->end,$query->end) - max($res->gene->start,$query->start) + 1;
+      print $testing "gene_overlap=",$gene_overlap,"\n";
+      if(!defined $gene_overlap_length || $gene_overlap > $gene_overlap_length) {
         # The contig overlap the exon and the intron (only for fwd annotation)
+        $gene_overlap_length=$gene_overlap;
         $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+        print $testing "REPLACED\n";
         $current_gene = $res->gene;
+
       # Both candidates have the same overlapping length, we select the one with the longer gene length
-      } elsif(defined $exonic_overlap_length && $overlap == $exonic_overlap_length) {
+      } elsif(defined $gene_overlap_length && $gene_overlap == $gene_overlap_length) {
         # Selelect the longest gene
+
         if($res->gene->length > $current_gene->length) {
           # The contig overlap the exon and the intron (only for fwd annotation)
           $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
+          print $testing "REPLACED\n";
           $current_gene = $res->gene;
         }
       }
