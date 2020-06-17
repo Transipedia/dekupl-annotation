@@ -72,6 +72,8 @@ Options:
       --sample-conditions FILE
                           (Optional) Sample conditions. First column is sample name,
                           second column is sample condition)
+      --repeat            FILE
+      			  (Optional) Repeat sequences reference. A human repeat reference is available in the toy directory.
 
   Optional Arguments:
       -t,--threads INT    Number of threads (for GSNAP)
