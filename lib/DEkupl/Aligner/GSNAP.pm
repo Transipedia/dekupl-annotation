@@ -54,7 +54,7 @@ sub generateBam {
   );
 
   print STDERR "Executing GSNAP\nCommand: $command\n",
-  
+
   # run GSNAP verify that the execution of GSNAP ended well
   system($command) == 0 or die("GSNAP alignement failed, see logs in $logs");
   unlink $logs;

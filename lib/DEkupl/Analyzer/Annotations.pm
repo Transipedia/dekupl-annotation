@@ -290,10 +290,6 @@ sub _selectBestCandidate {
   my $gene_overlap;
   my $gene_overlap_length;
   my $current_gene;
-  my $testing;
-  my $t_file = "/data/work/I2BC/antoine.laine/LUAD/TCGA/testing.txt";
-  open($testing, '>>', $t_file) or die "Cannot open $t_file";
-  print $testing "Contig = ",$query->start,"   ",$query->end,"\n";
   foreach my $res (@{$results}) {
     my $res_type = ref($res);
     # TODO we should do a special treatment when there is multiple genes overlapping
@@ -307,14 +303,11 @@ sub _selectBestCandidate {
       # Genes with exons overlap take over non-exonic gene annotations
       # If multiple exons are overlapping, we take the one with the largest
       # overlapping length
-      print $testing "Exon","   ",$res->gene->symbol," : ",$res->gene->length,"\n";
       my $gene_overlap = min($res->gene->end,$query->end) - max($res->gene->start,$query->start) + 1;
-      print $testing "gene_overlap=",$gene_overlap,"\n";
       if(!defined $gene_overlap_length || $gene_overlap > $gene_overlap_length) {
         # The contig overlap the exon and the intron (only for fwd annotation)
         $gene_overlap_length=$gene_overlap;
         $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
-        print $testing "REPLACED\n";
         $current_gene = $res->gene;
 
       # Both candidates have the same overlapping length, we select the one with the longer gene length
@@ -324,7 +317,6 @@ sub _selectBestCandidate {
         if($res->gene->length > $current_gene->length) {
           # The contig overlap the exon and the intron (only for fwd annotation)
           $intronic = ($query->start < $res->start || $query->end > $res->end)? 1 : 0;
-          print $testing "REPLACED\n";
           $current_gene = $res->gene;
         }
       }

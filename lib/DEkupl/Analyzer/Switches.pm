@@ -258,7 +258,7 @@ tab_counts_Kallisto   <- merge(tab_counts_DEkupl,normalizedGeneCounts, by.x="gen
 tab_counts_Kallisto   <- tab_counts_Kallisto[,c(2,1,(ncol(tab_counts_DEkupl)+1):(ncol(tab_counts_Kallisto)))]
 
 #order both tables following the contig ID
-tab_counts_Kallisto   <- tab_counts_Kallisto[order(tab_counts_Kallisto\$contig_id),] 
+tab_counts_Kallisto   <- tab_counts_Kallisto[order(tab_counts_Kallisto\$contig_id),]
 
 tab_counts_DEkupl     <- tab_counts_DEkupl[order(tab_counts_DEkupl\$contig_id),]
 
@@ -288,14 +288,14 @@ dds <- DESeqDataSetFromMatrix(countData=as.matrix(round(tab_counts_DEkupl)),colD
 #compute normalization factor for each contig at each sample, thanks to their normalized gene counts from Kallisto
 normFactors <- as.matrix((tab_counts_Kallisto[,3:ncol(tab_counts_Kallisto)]+1)/exp(rowMeans(log(tab_counts_Kallisto[,3:ncol(tab_counts_Kallisto)]+1))))
 
-#allocation of normalization factors 
+#allocation of normalization factors
 normalizationFactors(dds) <- normFactors
 
 #estimate overdispersion parameters
 #it's possible to have issues with estimateDispersions() if you have a low number of contigs ("dispersion trend not well captured")
 #so, we use fitType="mean" instead of the default "parametric"
 getDispersions <- function(my_object="") {
-  
+
   dds<-try(estimateDispersions(my_object))
 
   if (class(dds)=="try-error"){
@@ -307,12 +307,12 @@ getDispersions <- function(my_object="") {
 }
 
 dds <- getDispersions(dds)
-dds <- nbinomWaldTest(dds) #binomiale negative test 
+dds <- nbinomWaldTest(dds) #binomiale negative test
 
 #results
 #we turn off all kind of filters to avoid "NA" values for outliers
 DESeq2Result <- results(dds,independentFiltering=F,cooksCutoff=F)
-DESeq2Result <- DESeq2Result[c("padj","stat")] # extract padj 
+DESeq2Result <- DESeq2Result[c("padj","stat")] # extract padj
 
 #make a custom table with contig ID,mean cond1, mean cond2, log2FC, padj, normalized counts for all libraries
 new_result <- data.frame(
