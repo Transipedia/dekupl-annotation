@@ -25,8 +25,7 @@ has 'contig_color_mode' => (
 );
 
 has 'contigs' => (
-  is => 'ro',
-  isa => 'DEkupl::Contigs',
+  is => 'ro'
 );
 
 my @columns = (

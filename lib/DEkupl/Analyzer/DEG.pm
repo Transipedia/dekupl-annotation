@@ -53,11 +53,12 @@ sub BUILD {
     my $is_diff = 0;
     if($padj <= $self->max_padj) {
       if($log2FC >= $self->min_log2fc) {
-          my $is_diff = 1;
-      } else if($log2FC <= -$self->min_log2fc) {
-          my $is_diff = -1;
+          $is_diff = 1;
+      } elsif($log2FC <= -$self->min_log2fc) {
+          $is_diff = -1;
       }
     }
+
     $gene_is_diff{$gene_id} = $is_diff;
     $nb_diff_genes++ if $is_diff;
   }
@@ -66,7 +67,7 @@ sub BUILD {
   while(my $contig = $contigs_it->()) {
     if(defined $contig->{gene_id}) {
       my $is_diff = $gene_is_diff{$contig->{gene_id}};
-      $contig->{gene_is_diff} = $is_diff if defined $is_diff;
+      $contig->{gene_is_diff} = DEkupl::Utils::booleanEncoding($is_diff) if defined $is_diff;
       $nb_contigs_with_diff_gene++ if $is_diff;
       # Save contig
       $self->contigs_db->saveContig($contig);

@@ -9,6 +9,7 @@ use DEkupl;
 use DEkupl::Utils;
 use DEkupl::RemoveAdapters;
 use DEkupl::Contigs;
+use DEkupl::ContigsKaMRaT;
 use DEkupl::ContigsDB;
 use DEkupl::Annotations;
 use DEkupl::IntervalQuery;
@@ -41,6 +42,7 @@ sub BUILD {
   my $max_splice_length = 100000;
   my $adapters_fasta;
   my $repeat_fasta;
+  my $KaMRaT_handle;
 
   GetOptions(
       "help"             => \$help,
@@ -61,6 +63,7 @@ sub BUILD {
       "contig-color=i"      => \$contig_color_mode,
       "adapters=s"          => \$adapters_fasta,
       "repeat=s"            => \$repeat_fasta,
+      "kamrat"              => \$KaMRaT_handle,
       "version"             => \$version,
   ) or pod2usage(-verbose => 1);
 
@@ -99,15 +102,23 @@ sub BUILD {
   # that load the config file and check that everything is ok
   my $gff_file = "$index_dir/annotations.gff3.gz";
   my @analyzers;
-
+  my $contigs;
   # Create contigs object
-  my $contigs = DEkupl::Contigs->new(
-    verbose       => $verbose,
-    contigs_file  => $contigs_file,
-    is_stranded   => $is_stranded
-  );
-  push @analyzers, $contigs;
-
+  if ($KaMRaT_handle){
+      $contigs = DEkupl::ContigsKaMRaT->new(
+      verbose       => $verbose,
+      contigs_file  => $contigs_file,
+      is_stranded   => $is_stranded
+    );
+    push @analyzers, $contigs;
+  } else {
+      $contigs = DEkupl::Contigs->new(
+      verbose       => $verbose,
+      contigs_file  => $contigs_file,
+      is_stranded   => $is_stranded
+    );
+    push @analyzers, $contigs;
+  }
   # Create contigs DB
   my $tempdir = tempdir("$tmp_dir/dkplannot_tmp.XXXXX", CLEANUP => 1);
   my $contigs_db = DEkupl::ContigsDB->new(db_folder => $tempdir);
