@@ -31,7 +31,7 @@ Input files can be gzipped.
 
 ```
 Usage:
-    dkpl indx -g gff_file -f genome.fasta -i index_dir
+    dkpl index -g gff_file -f genome.fasta -i index_dir
 
   Mandatory Arguments:
       -a,--annotations FILE   GFF annotation file
@@ -62,7 +62,7 @@ Usage:
 
 Options:
   Requiered Arguments:
-      -i,--index DIR      path to the index directory (created with dkplannot index)
+      -i,--index DIR      path to the index directory (created with dekupl-annotation index)
 
   Input/Output:
       -o,--output DIR     path to the output directory (default: "DEkupl_annotation/")
@@ -73,7 +73,7 @@ Options:
                           (Optional) Sample conditions. First column is sample name,
                           second column is sample condition)
       --repeat            FILE
-      			  (Optional) Repeat sequences reference. A human repeat reference is available in the toy directory.
+                    			(Optional) Repeat sequences reference. A human repeat reference is available in the toy directory.
 
   Optional Arguments:
       -t,--threads INT    Number of threads (for GSNAP)
@@ -84,8 +84,10 @@ Options:
       --contig-color INT  Contig color mode (default 1):
                             1 : contigs on forward strand are in red (contigs on reverse strand are in blue)
 		                        2 : contigs on forward strand are in blue (contigs on reverse strand are in red)
+      --kamrat
+                          Allow input tweaked by Kamrat analysis (with an additional score column)
       -h,--help           show this help message and exit
-      -v,--verbose        print additionnal debug messages
+      -v,--verbose        print additional debug messages
 ```
 
 Output files will be placed under the `DEkupl_annotation` directory unless you specify
@@ -109,63 +111,58 @@ dkpl annot -i test_index --deg toy/dkpl-run/DEGs.tsv.gz --norm-gene-counts toy/d
 ```
 ## Installation
 
-We recommand tu use [conda](https://anaconda.org/) to install dekupl-annotation, but you can also use Docker, Singularity and manual installation.
+We recommand tu use [singularity](https://singularity.lbl.gov/) to install dekupl-annotation, but you can also use Docker, and manual installation.
 
-### Option 1: Use dekupl-annotation with conda
+### Option 1: Use dekupl-annotation with singularity
 
-- **Step 1: Install conda.** If you do not have a conda distribution installed, we recommend to install miniconda as follows. See [Miniconda website](https://conda.io/miniconda.html) for other installation instructions (ex. for OSX).
+One can create a singularity container from the docker image.
+
+- **Step 1: Build Singularity image**
     ```
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-    bash Miniconda3-latest-Linux-x86_64.sh
-    ``` 
-- **Step 2: Install dekupl-annotatation**. This will create a dekupl conda environment (if missing) and install dekupl-annotation inside. The order of parameters is important.
+    singularity build dekupl-annotation.simg docker://transipedia/dekupl-annotation:1.0.3
     ```
-    conda install -n dekupl -y -m --override-channels -c transipedia \
-     -c bioconda -c conda-forge -c https://repo.anaconda.com/pkgs/main \
-     -c https://repo.anaconda.com/pkgs/free \
-     -c https://repo.anaconda.com/pkgs/pro dekupl-annotation
+
+It's advised to mount some volumes (input/output directories). To mount the "/store" volume you should use "--bind /store:/mnt". That way, you can access the /store directory by using /mnt. For example, if your input files for the index are located at /store/references/{files} :
+
+- **Step 2a: Run dekupl-annotation index with mounted volumes**
     ```
-- **Step 3: Run dekupl-annotation**. We first activate the conda environement where dekupl-annotation was installed, then we run the software.
+    singularity run --bind /store:/mnt ./dekupl-annotation.simg index -g /mnt/references/GRCh38-chr22.fa.gz \
+    -a /mnt/references/GRCh38-chr22.gff.gz -i mnt/index    
     ```
-    source activate dekupl
-    dkpl index -g toy/references/GRCh38-chr22.fa.gz -a toy/references/GRCh38-chr22.gff.gz -i test_index
-    dkpl annot -i test_index toy/dkpl-run/merged-diff-counts.tsv.gz
+Then, if your DEkupl_run files are located at /store/DEkupl_result/{files} :
+
+- **Step 3a: Run dekupl-annotation annot with mounted volumes**
     ```
+    singularity run --bind /store:/mnt ./dekupl-annotation.simg annot -i /mnt/index /mnt/DEkupl_result/case_vs_control_kmer_counts/merged-diff-counts.tsv.gz -o ./ --sample-conditions /mnt/DEkupl_result/metadata/sample_conditions_full.tsv --deg /mnt/DEkupl_result/gene_expression/normalvstumor-DEGs.tsv --norm-gene-counts /mnt/DEkupl_result/gene_expression/normalized_counts.tsv --repeat /mnt/references/homo_sapiens/RMBlastLib.fasta    
+    ```
+
+
+Alternatively (Not advised !), you can move every input file in the directory where dekupl-annotation is running (subdirectories allowed).
+
+- **Step 2b: Run dekupl-annotation with every input file in dekupl-annotation.simg directory**
+    ```
+    singularity run ./dekupl-annotation.simg index -g references/GRCh38-chr22.fa.gz \
+    -a toy/references/GRCh38-chr22.gff.gz -i index
+    singularity run ./dekupl-annotation.simg annot -i index DEkupl_result/case_vs_control_kmer_counts/merged-diff-counts.tsv.gz -o ./ --sample-conditions DEkupl_result/metadata/sample_conditions_full.tsv --deg DEkupl_result/gene_expression/normalvstumor-DEGs.tsv --norm-gene-counts DEkupl_result/gene_expression/normalized_counts.tsv --repeat references/homo_sapiens/RMBlastLib.fasta    
+    ```
+
 
 ### Option 2: Use dekupl-annotation with Docker
 
-- **Step 1: Retrieve the docker image.**
-    ```
-    docker pull transipedia/dekupl-annotation
-    ```
-- **Step 2: Run dekupl-annotation**.
-    You may need to mount some volumes (input and output directories)
-    ```
-    docker run --rm -v ${PWD}/toy:/data/toy -v ${PWD}/test_index:/data/test_index \
-    transipedia/dekupl-annotation index -g /data/toy/references/GRCh38-chr22.fa.gz \
-    -a /data/toy/references/GRCh38-chr22.gff.gz -i /data/test_index
-    ```
+    - **Step 1: Retrieve the docker image.**
+        ```
+        docker pull transipedia/dekupl-annotation:1.0.3
+        ```
+    - **Step 2: Run dekupl-annotation**.
+        You will need to mount some volumes (input and output directories). If your input files for the index are located at /store/references/{files}
+        ```
+        docker run --rm -v /store/:/data/ \
+        transipedia/dekupl-annotation index -g /data/references/GRCh38-chr22.fa.gz \
+        -a /data/references/GRCh38-chr22.gff.gz -i /data/index
+        ```
 
-### Option 3: Use dekupl-annotation with singularity
 
-One can create a singularity container from the docker image. Two methods are available, they should both work. 
-
-A difference with docker image is that with Singularity, you don't need to mount any volume, but you must have your config.json and your inputs file in the directory where you are running dekupl-annotation.
-
-- **Method 1**
-  ```
-    singularity pull docker://transipedia/dekupl-annotation
-    ./dekupl-annotation.simg index -g toy/references/GRCh38-chr22.fa.gz \
-    -a toy/references/GRCh38-chr22.gff.gz -i test_index
-    ```
-- **Method 2**
-    ```
-    singularity build dekupl-annotation.img docker://transipedia/dekupl-annotation
-    singularity run ./dekupl-annotation.img index -g toy/references/GRCh38-chr22.fa.gz \
-    -a toy/references/GRCh38-chr22.gff.gz -i test_index
-    ```
-
-### Option 4: Install from the sources (not recommended)
+### Option 3: Install from the sources (not recommended)
 
 - **Step 1: Install dependancies**. Before using Dekupl-annotation, install these dependencies:
     - **Required**: bash (version >= 4.3.46), R (version >= version 3.2.3) with libraries DESeq2, GSNAP (version >= 2016-11-07), samtools (version >= 1.3) & blast (version >= 2.5.0+)
@@ -178,7 +175,7 @@ A difference with docker image is that with Singularity, you don't need to mount
 - **Step 2: Install dekupl-annot**
     - **Global install**: The following command, will clone the repository and install dkpl-annot globaly with dzil and cpanm.
     ```
-    git clone https://github.com/Transipedia/dekupl-annotation.git && cd dekupl-annotation
+    git clone -branch ALtweaks https://github.com/Transipedia/dekupl-annotation.git && cd dekupl-annotation
     dzil install --install-command 'cpanm .'
     ```
     - **Local install**: For local install you need to use the `-l LOCAL_DIR` parameter of cpanm. Then you need to make sure that the Perl library that have been installed locally are available to the path using the `PERL5LIB` environnement variable.
@@ -259,5 +256,3 @@ Then, add the local dir to the PERL5LIB env var to use the modules locally.
 ```
 export PERL5LIB=$PWD/lib:$PERL5LIB
 ```
-
-You are ready to code!
