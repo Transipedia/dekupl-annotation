@@ -96,6 +96,7 @@ Extra file can be supplied to complete the annotation process (see ontolgy table
 
 * differentially expressed genes (`--deg`) for DEG analyzer
 * nomarlized gene counts (`--norm-gene-counts`) and sample conditions (`--sample-conditions`) for Switches analyzer.
+* repeat sequence fasta (`--repeat`) for annotating repeats. This step is performed with Blast, and by infering the entropy of the contigs.
 
 If the index was created with the `--star` option, then dkpl-annot will look for chimeric junctions.
 
@@ -245,6 +246,7 @@ Alternatively (Not advised !), you can move every input file in the directory wh
 | gene_is_diff            | Bool  | DEG         | DEGs                           | The main annotated gene (gene_id ontology) is differantially expressed                             |
 | du_pvalue               | Float | Switches    | DEGs                           | P-value for contig differential usage                                                              |
 | du_stats                | Float | Switches    | gene_counts, sample_conditions | Differential usage statistic                                                                       |
+| repeat                | Str | RepeatAnnotation   | repeat fasta | Repeat Annotation (Blast + Entropy of Contig)                                                                       |
 
 ## Dev environnement
 
