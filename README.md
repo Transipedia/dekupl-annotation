@@ -72,7 +72,7 @@ Options:
                           (Optional) Sample conditions. First column is sample name,
                           second column is sample condition)
       --repeat            FILE
-                    			(Optional) Repeat sequences reference. A human repeat reference is available in the toy directory.
+                    	  (Optional) Repeat sequences reference. See more detail below.
 
   Optional Arguments:
       -t,--threads INT    Number of threads (for GSNAP)
@@ -92,11 +92,11 @@ Options:
 Output files will be placed under the `DEkupl_annotation` directory unless you specify
 another output directory with `-o` option.
 
-Extra file can be supplied to complete the annotation process (see ontolgy table) :
+Extra file can be supplied to complete the annotation process (see ontology table) :
 
 * differentially expressed genes (`--deg`) for DEG analyzer
-* nomarlized gene counts (`--norm-gene-counts`) and sample conditions (`--sample-conditions`) for Switches analyzer.
-* repeat sequence fasta (`--repeat`) for annotating repeats. This step is performed with Blast, and by infering the entropy of the contigs.
+* normalized gene counts (`--norm-gene-counts`) and sample conditions (`--sample-conditions`) for Switches analyzer.
+* repeat sequence fasta file (--repeat) for annotating repeats. A human repeat file from DFAM3.1 (the Repeatmasker database PMID:23203985) is available in the toy firectory. Each contig will be aligned to the repeat file using Blast and significant hits will be reported with their repeat identifier. Furthermore, an entropy filter will be applied to the contig and any high entropy contig will be reported as "Simple repeat".
 
 If the index was created with the `--star` option, then dkpl-annot will look for chimeric junctions.
 
