@@ -246,7 +246,7 @@ Alternatively (Not advised !), you can move every input file in the directory wh
 | gene_is_diff            | Bool  | DEG         | DEGs                           | The main annotated gene (gene_id ontology) is differantially expressed                             |
 | du_pvalue               | Float | Switches    | DEGs                           | P-value for contig differential usage                                                              |
 | du_stats                | Float | Switches    | gene_counts, sample_conditions | Differential usage statistic                                                                       |
-| repeat                | Str | RepeatAnnotation   | repeat fasta | Repeat Annotation (Blast + Entropy of Contig)                                                                       |
+| rep_type                | Str | RepeatAnnotation   | repeat fasta | Repeat Annotation (Blast + Entropy of Contig)                                                                       |
 
 ## Dev environnement
 
